@@ -1,0 +1,12 @@
+{
+  "ERRORS.NOT_FOUND": "Resource not found",
+  "ERRORS.INVALID_ARGUMENT": "Some fields are missing or invalid. Please check the form for errors",
+  "ERRORS.PERMISSION_DENIED": "No permission to access the requested resource",
+  "ERRORS.MISSING_TRANSLATION_FOR_%s": "Could not found translation value for: \"%s\"",
+  "VALIDATIONS.EXPIRED": "is expired",
+  "VALIDATIONS.INVALID_EMAIL": "invalid email format",
+  "VALIDATIONS.INVALID": "is invalid",
+  "VALIDATIONS.TAKEN": "is taken",
+  "VALIDATIONS.BLANK": "must be present",
+  "VALIDATIONS.MUST_MATCH": "must match \"{property}\""
+}

@@ -1,0 +1,51 @@
+{
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "networkError": "Network error. Please check your connection."
+  },
+  "info": {
+    "requestSuccessful": "Request completed successfully"
+  },
+  "toast": {
+    "errorMessage": "Error",
+    "successMessage": "Success",
+    "infoMessage": "Information"
+  },
+  "download": {
+    "started": "Your download has started",
+    "failed": "We couldn’t start your download"
+  },
+  "validation": {
+    "projectNameRequired": "Project name is required",
+    "projectNameMax": "Project name can’t be longer than 50 characters",
+    "projectDescriptionMax": "Description can’t be longer than 500 characters",
+
+    "tagTooLong": "Tags can’t be longer than 30 characters",
+    "tagMax": "You can add up to 10 tags in total",
+    "tagDuplicate": "This tag has already been added",
+    "tooManyLongTags": "You can only add up to 3 long tags (over 10 characters)",
+
+    "routeRequired": "Route is required",
+    "routeInvalid": "Route cannot start with a slash '/'",
+    "routeTooLong": "Route can’t be longer than 200 characters",
+
+    "figmaUrlRequired": "Figma URL is required",
+    "figmaUrlInvalid": "Figma URL must be a valid Figma link with ?node-id parameter",
+
+    "figmaTokenRequired": "Figma token is required",
+    "figmaTokenInvalid": "Figma token must start with figd_ and contain only letters and numbers"
+  },
+  "helper": {
+    "projectName": "Choose a descriptive name for your project",
+    "projectDescription": "Provide additional context about your project goals",
+    "tags": "Add relevant tags to help organize and find your project",
+    "path": "URL path for your page (cannot start with a slash '/')",
+    "figmaUrl": "Paste the Figma file URL with node-id parameter",
+    "figmaToken": "Your personal Figma access token starting with figd_",
+    "outDirPath": "Directory where generated files will be saved",
+    "templatesDirPath": "Directory containing your custom templates",
+    "assetsOutDir": "Directory for exported assets and images",
+    "assetsPrefixPath": "URL prefix for asset references in generated code",
+    "homePage": "This will set the page as the homepage"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "ERRORS": {
+    "NOT_FOUND": "[JA] Page not found",
+    "PREVIEW_NOT_FOUND": "[JA] This Page's preview is not yet available"
+  },
+  "VALIDATIONS": {
+    "MUST_HAVE_ONE_HOME_PAGE": "[JA] Project needs one home page"
+  },
+  "FIGMA_URL": {
+    "INVALID":"[JA] Figma URL is invalid",
+    "MISSING": "[JA] Figma URL is missing",
+    "NODE_ID": {
+      "REQUIRED": "[JA] Must contain 'node-id' query parameter"
+    }
+  }
+}

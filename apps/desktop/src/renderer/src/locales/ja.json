@@ -1,0 +1,51 @@
+{
+  "error": {
+    "somethingWentWrong": "[JA] Something went wrong",
+    "networkError": "[JA] Network error. Please check your connection."
+  },
+  "info": {
+    "requestSuccessful": "[JA] Request completed successfully"
+  },
+  "toast": {
+    "errorMessage": "[JA] Error",
+    "successMessage": "[JA] Success",
+    "infoMessage": "[JA] Information"
+  },
+  "download": {
+    "started": "[JA] Your download has started",
+    "failed": "[JA] We couldn’t start your download"
+  },
+  "validation": {
+    "projectNameRequired": "[JA] Project name is required",
+    "projectNameMax": "[JA] Project name can’t be longer than 50 characters",
+    "projectDescriptionMax": "[JA] Description can’t be longer than 500 characters",
+
+    "tagTooLong": "[JA] Tags can’t be longer than 30 characters",
+    "tagMax": "[JA] You can add up to 10 tags in total",
+    "tagDuplicate": "[JA] This tag has already been added",
+    "tooManyLongTags": "[JA] You can only add up to 3 long tags (over 10 characters)",
+
+    "routeRequired": "[JA] Route is required",
+    "routeInvalid": "[JA] Route cannot start with a slash '/'",
+    "routeTooLong": "[JA] Route can’t be longer than 200 characters",
+
+    "figmaUrlRequired": "[JA] Figma URL is required",
+    "figmaUrlInvalid": "[JA] Figma URL must be a valid Figma link with ?node-id parameter",
+
+    "figmaTokenRequired": "[JA] Figma token is required",
+    "figmaTokenInvalid": "[JA] Figma token must start with figd_ and contain only letters and numbers"
+  },
+  "helper": {
+    "projectName": "[JA] Choose a descriptive name for your project",
+    "projectDescription": "[JA] Provide additional context about your project goals",
+    "tags": "[JA] Add relevant tags to help organize and find your project",
+    "path": "[JA] URL path for your page (cannot start with a slash '/')",
+    "figmaUrl": "[JA] Paste the Figma file URL with node-id parameter",
+    "figmaToken": "[JA] Your personal Figma access token starting with figd_",
+    "outDirPath": "[JA] Directory where generated files will be saved",
+    "templatesDirPath": "[JA] Directory containing your custom templates",
+    "assetsOutDir": "[JA] Directory for exported assets and images",
+    "assetsPrefixPath": "[JA] URL prefix for asset references in generated code",
+    "homePage": "[JA] This will set the page as the homepage"
+  }
+}

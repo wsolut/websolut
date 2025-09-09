@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background-color: #0A0D10;
+  font-family: theme('fontFamily.sans');
+}
+
+iframe:not([src]) {
+  display: none;
+}
+
+iframe {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+a:not([disabled]), button:not([disabled]) {
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(90%);
+  }
+
+  &:focus {
+    filter: brightness(105%);
+    outline: none;
+  }
+
+  &:active {
+    filter: brightness(80%);
+  }
+}

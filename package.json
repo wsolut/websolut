@@ -1,0 +1,33 @@
+{
+  "name": "websolut",
+  "version": "0.2.0-alpha",
+  "description": "Websolut monorepo",
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "packages/core",
+    "apps/backend",
+    "apps/desktop"
+  ],
+  "scripts": {
+    "lint": "turbo lint",
+    "lint:core": "turbo lint --filter=websolut-core",
+    "lint:backend": "turbo lint --filter=websolut-backend",
+    "lint:desktop": "turbo lint --filter=websolut-desktop",
+    "build": "turbo build",
+    "build:core": "turbo build --filter=websolut-core",
+    "build:backend": "turbo build --filter=websolut-backend",
+    "build:desktop:win": "npm run build:backend && cd apps/desktop && npm run build:win",
+    "build:desktop:mac": "npm run build:backend && cd apps/desktop && npm run build:mac",
+    "build:desktop:linux": "npm run build:backend && cd apps/desktop && npm run build:linux",
+    "dev:core": "turbo dev --filter=@wsolut/websolut-core",
+    "dev:backend": "turbo dev --filter=websolut-backend",
+    "dev:desktop": "turbo dev --filter=websolut-desktop",
+    "start:desktop": "npm run build:backend && cd apps/desktop && npm run start",
+    "clean": "turbo clean",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "turbo": "^2.5.5"
+  }
+}

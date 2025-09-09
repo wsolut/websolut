@@ -1,0 +1,95 @@
+import { expect, it, describe } from 'vitest';
+import { FigmaNodeConverter } from '../../src/figma-node-converter';
+import * as FigmaExamples from '../support/figma-examples';
+
+describe('NodeWrapper', () => {
+  describe('#cssBorderWidth', () => {
+    it('should be correct when strokeWeight is present', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: {
+              r: 0.0,
+              g: 0.0,
+              b: 0.0,
+              a: 1.0,
+            },
+          },
+        ],
+        strokeWeight: 2,
+      });
+      expect(instance.cssBorderWidth()).toBe('2px');
+    });
+
+    it('should be blank when strokes has SOLID, strokeWeight is present and individualStrokeWeights is present', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: {
+              r: 0.0,
+              g: 0.0,
+              b: 0.0,
+              a: 1.0,
+            },
+          },
+        ],
+        strokeWeight: 2,
+        individualStrokeWeights: {
+          top: 1.0,
+          right: 2.0,
+          bottom: 3.0,
+          left: 4.0,
+        },
+      });
+      expect(instance.cssBorderWidth()).toBe(undefined);
+    });
+
+    it('should return the value of the first attribute of individualStrokeWeights in px when all values are the same', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: {
+              r: 0.0,
+              g: 0.0,
+              b: 0.0,
+              a: 1.0,
+            },
+          },
+        ],
+        strokeWeight: 2,
+        individualStrokeWeights: {
+          top: 3.0,
+          right: 3.0,
+          bottom: 3.0,
+          left: 3.0,
+        },
+      });
+      expect(instance.cssBorderWidth()).toBe('3px');
+    });
+
+    it('should be blank when strokes does not have SOLID and strokeWeight is present', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'IMAGE',
+            scaleMode: 'FILL',
+            imageRef: '',
+          },
+        ],
+        strokeWeight: 2,
+      });
+      expect(instance.cssBorderWidth()).toBe(undefined);
+    });
+  });
+});

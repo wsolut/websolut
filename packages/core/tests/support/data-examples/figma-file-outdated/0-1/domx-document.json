@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "title": "BODY",
+    "figmaFile": {
+      "name": "Figma Test Mock",
+      "lastModified": "2025-05-13T05:21:10Z",
+      "key": "figma-file-with-user-data"
+    },
+    "figmaNodeId": "0:1"
+  },
+  "headId": "-null-",
+  "bodyId": "i01",
+  "nodes": {
+    "i01": {
+      "id": "i01",
+      "name": "BODY",
+      "type": "ELEMENT",
+      "attributes": {
+        "id": "i01"
+      },
+      "metadata": {
+        "figmaNode": {
+          "id": "0:1",
+          "name": "Canvas 1",
+          "type": "CANVAS"
+        }
+      },
+      "style": {},
+      "childrenIds": [
+        "i011",
+        "i012"
+      ]
+    },
+    "i011": {
+      "id": "i011",
+      "name": "MAIN",
+      "type": "ELEMENT",
+      "attributes": {
+        "id": "i011",
+        "class": "card"
+      },
+      "metadata": {
+        "figmaNode": {
+          "id": "0:1:1",
+          "name": "<main> .card frame 1",
+          "type": "FRAME"
+        }
+      },
+      "style": {},
+      "childrenIds": [
+        "i80864888067139280671625",
+        "i0112"
+      ]
+    },
+    "i80864888067139280671625": {
+      "id": "i80864888067139280671625",
+      "name": "DIV",
+      "type": "ELEMENT",
+      "attributes": {
+        "id": "i80864888067139280671625",
+        "class": "rounded-image"
+      },
+      "assets": {
+        "2f44802a1e60e100445f7065aeea100fe646b924": {
+          "format": "imageRef",
+          "url": "https://s3-alpha-sig.figma.com/img/2f44/802a/1e60e100445f7065aeea100fe646b924?Expires=1750636800&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=HVhnoCyjdwswK1bDwsZv2hKk83qYaU1OgTFsmK4rqaVfGx9d7TH1JItfJ7v5s7M0yABDDW-Zhr2tB0jGRR5Hd~dzc3Z9z4y0hFbrvnByl6JtanVT9q0Vq8mQ3Vj2KMC7s~ILakJfB4nh2EqBF8rERQdlN2e3x64DDK7k86w7QQ2Fa-EGhkL7VxqDUDp9NHB8r5iCCpu92h7oIkxbuUINZ4qWzmjIPCk1Uh1bH-qjSJG3HuNvXw-cpKrppIjbi3Z0CgcPx4Gxl3Um37g5QanqpsB-IS1n0S2CtDfq5tICz2QfZpG5cHrGVauH0rUGxKDS9KrgQx6ELhALBi8~Hil-vA__"
+        }
+      },
+      "metadata": {
+        "figmaNode": {
+          "id": "I8086:488;8067:1392;8067:1625",
+          "name": ".rounded-image",
+          "type": "INSTANCE"
+        }
+      },
+      "style": {
+        "backgroundImage": "url(<%- i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].filePath || i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].url %>)",
+        "backgroundPosition": "center",
+        "backgroundRepeat": "no-repeat",
+        "backgroundSize": "cover",
+        "borderRadius": "24px",
+        "height": "100%",
+        "overflow": "auto",
+        "width": "100%"
+      },
+      "childrenIds": []
+    },
+    "i0112": {
+      "id": "i0112",
+      "name": "P",
+      "type": "ELEMENT",
+      "attributes": {
+        "id": "i0112"
+      },
+      "text": "This is a text node",
+      "metadata": {
+        "figmaNode": {
+          "id": "0:1:1:2",
+          "name": "<p>",
+          "type": "TEXT"
+        }
+      },
+      "style": {},
+      "childrenIds": []
+    },
+    "i012": {
+      "id": "i012",
+      "name": "P",
+      "type": "ELEMENT",
+      "attributes": {
+        "id": "i012"
+      },
+      "text": "old text from file",
+      "metadata": {
+        "figmaNode": {
+          "id": "0:1:2",
+          "name": "<p> paragraph 1",
+          "type": "TEXT"
+        }
+      },
+      "style": {},
+      "childrenIds": []
+    }
+  }
+}

@@ -1,0 +1,60 @@
+appId: com.electron.app
+productName: Websolut
+electronVersion: 35.1.5
+directories:
+  buildResources: build
+asar: true
+asarUnpack:
+  - resources/**
+  - '**/node_modules/websolut-backend/**'
+files:
+  - '**/*'
+  - '!**/.vscode/**'
+  - '!src/**'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+win:
+  # Point to existing Windows ICO (previous path folder didn't exist)
+  icon: build/icon.ico
+  executableName: Websolut
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  # Point to existing macOS ICNS (previous path folder didn't exist)
+  icon: build/icon.icns
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+  artifactName: ${name}-${version}.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  forceCodeSigning: true
+  extendInfo:
+    NSCameraUsageDescription: Application requests access to the device's camera.
+    NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  # Provide a 512x512 PNG. Optionally supply a directory of PNGs; this single file is fine.
+  icon: build/icon.png
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: electronjs.org
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+publish:
+  provider: generic
+  url: https://example.com/auto-updates

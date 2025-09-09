@@ -1,0 +1,16 @@
+{
+  "ERRORS": {
+    "NOT_FOUND": "Page file not found",
+    "PREVIEW_NOT_FOUND": "This Page's preview is not yet available"
+  },
+  "VALIDATIONS": {
+    "MUST_HAVE_ONE_HOME_PAGE": "Project needs one home page"
+  },
+  "FIGMA_URL": {
+    "INVALID":"Figma URL is invalid",
+    "MISSING": "Figma URL is missing",
+    "NODE_ID": {
+      "REQUIRED": "Must contain 'node-id' query parameter"
+    }
+  }
+}

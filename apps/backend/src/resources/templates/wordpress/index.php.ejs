@@ -1,0 +1,114 @@
+<?php
+/*
+Plugin Name: Static Page Renderer
+Description: Serves static HTML files from plugin folder based on page slugs.
+Version: 3.3
+Author: Websolut Org
+*/
+
+// Disable WP canonical redirect guessing
+add_filter('do_redirect_guess_404_permalink', '__return_false');
+remove_filter('template_redirect', 'redirect_canonical');
+
+// Serve the static HTML page based on the current slug
+add_action('template_redirect', 'spr_serve_static_page');
+
+function spr_serve_static_page() {
+    if (is_admin()) return;
+
+    $slug = '';
+    $obj = get_queried_object();
+
+    // Check if this is a valid page object
+    if ($obj && isset($obj->post_type) && $obj->post_type === 'page') {
+        $front_id = (int)get_option('page_on_front');
+        $current_id = (int)$obj->ID;
+        $slug = ($current_id === $front_id) ? '' : $obj->post_name;
+    } else {
+        // Not a page — let WP handle it
+        return;
+    }
+
+    $html = spr_get_html_for_slug($slug);
+    if ($html !== false) {
+        status_header(200);
+        header('Content-Type: text/html');
+        echo $html;
+        exit;
+    }
+}
+
+// Load HTML and fix asset paths
+function spr_get_html_for_slug($slug) {
+    $base_dir = plugin_dir_path(__FILE__);
+    $base_url = plugin_dir_url(__FILE__);
+    $folder_path = ($slug === '') ? $base_dir : trailingslashit($base_dir . $slug);
+    $html_path = $folder_path . 'index.html';
+
+    if (!file_exists($html_path)) return false;
+
+    $html = file_get_contents($html_path);
+    $asset_url_base = ($slug === '') ? $base_url : trailingslashit($base_url . $slug . '/');
+
+    // Fix relative src/href paths
+    $html = preg_replace_callback(
+        '/(src|href)=["\'](?!https?:\/\/|\/\/|#|mailto:|javascript:)([^"\']+)["\']/i',
+        function ($matches) use ($asset_url_base) {
+            $attr = $matches[1];
+            $path = ltrim($matches[2], '/');
+            return $attr . '="' . $asset_url_base . $path . '"';
+        },
+        $html
+    );
+
+    return $html;
+}
+
+// On plugin activation: create pages from folders
+register_activation_hook(__FILE__, 'spr_create_pages');
+
+function spr_create_pages() {
+    $base_dir = plugin_dir_path(__FILE__);
+    $items = scandir($base_dir);
+
+    // Create homepage from root index.html
+    if (file_exists($base_dir . 'index.html')) {
+        $homepage = get_page_by_path('static-home');
+        if (!$homepage) {
+            $home_id = wp_insert_post([
+                'post_title'   => 'Home',
+                'post_name'    => 'static-home',
+                'post_content' => '',
+                'post_status'  => 'publish',
+                'post_type'    => 'page',
+            ]);
+        } else {
+            $home_id = $homepage->ID;
+        }
+
+        if (!empty($home_id)) {
+            update_option('show_on_front', 'page');
+            update_option('page_on_front', $home_id);
+        }
+    }
+
+    // Create WordPress pages for each folder with index.html
+    foreach ($items as $item) {
+        if (in_array($item, ['.', '..', 'assets'])) continue;
+
+        $item_path = $base_dir . $item;
+
+        if (is_dir($item_path) && file_exists($item_path . '/index.html')) {
+            $slug = sanitize_title($item);
+            if (!get_page_by_path($slug)) {
+                wp_insert_post([
+                    'post_title'   => ucfirst($slug),
+                    'post_name'    => $slug,
+                    'post_content' => '',
+                    'post_status'  => 'publish',
+                    'post_type'    => 'page',
+                ]);
+            }
+        }
+    }
+}

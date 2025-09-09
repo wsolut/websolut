@@ -1,0 +1,26 @@
+{
+  "ERRORS": {
+    "NOT_FOUND": "Resource not found",
+    "INVALID_ARGUMENT": "Some fields are missing or invalid. Please check the form for errors",
+    "UNAUTHENTICATED": "User not authenticated, please Sign In first",
+    "AUTHENTICATION_EXPIRED": "Expired user authentication, please Sign In first",
+    "PERMISSION_DENIED": "No permission to access the requested resource"
+  },
+  "VALIDATIONS": {
+    "BLANK": "must be present",
+    "EXPIRED": "is expired",
+    "INVALID_EMAIL": "invalid email format",
+    "INVALID": "is invalid",
+    "TAKEN": "is taken",
+    "MUST_MATCH": "must match \"{property}\"",
+    "MAX_LENGTH": "cannot be longer than {length} characters",
+    "MUST_BE_ENABLED": "must be enabled"
+  },
+  "RESOURCE": {
+    "NAME": {
+      "ZERO": "No Resource",
+      "ONE": "Resource",
+      "MANY": "Resources"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "ERRORS": {
+    "NOT_FOUND": "[JA] Project not found"
+  },
+  "VALIDATIONS": {
+    "NOT_WORKING": "[JA] Does not seem to be working.",
+    "TAKEN": "[JA] Project name already exists"
+  }
+}
