@@ -5,6 +5,7 @@ import { useRoute, RouterView } from 'vue-router';
 import StandaloneLayout from './layouts/StandaloneLayout.vue';
 import DefaultLayout from './layouts/DefaultLayout.vue';
 import PreviewLayout from './layouts/PreviewLayout.vue';
+import Toast from './components/common/Toast.vue';
 
 const route = useRoute();
 

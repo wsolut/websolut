@@ -11,6 +11,7 @@ import {
 } from '../@types';
 import axios, { AxiosResponse } from 'axios';
 import { io } from 'socket.io-client';
+import { useToast } from '../composables/useToast';
 import i18n from '@/locales/config/i18n';
 
 const SILENCED_STATUSSES = [301, 302, 303, 304, 307, 308];
@@ -116,12 +117,14 @@ export class BackendClient {
   }
 
   async downloadProjectsExport(id: number, strategy: string): Promise<void> {
+    const toast = useToast();
     const url = `${this.apiBaseUrl}/projects/${id}/export/${strategy}`;
     try {
       await downloadFile(url, strategy);
+      toast.info(i18n.global.t('download.started'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert(`${i18n.global.t('download.failed')}: ${msg}`);
+      toast.error(`${i18n.global.t('download.failed')}: ${msg}`);
       throw err;
     }
   }
@@ -211,33 +214,36 @@ export class BackendClient {
     );
   }
 
-  async get<T>(path: string, params?: object): Promise<T> {
-    return this.makeRequest<T>('get', path, params || {});
+  async get<T>(path: string, params?: object, options: { showToast?: boolean } = {}): Promise<T> {
+    return this.makeRequest<T>('get', path, params || {}, options);
   }
 
-  async post<T>(path: string, data?: object): Promise<T> {
-    return this.makeRequest<T>('post', path, data || {});
+  async post<T>(path: string, data?: object, options: { showToast?: boolean } = {}): Promise<T> {
+    return this.makeRequest<T>('post', path, data || {}, options);
   }
 
-  async put<T>(path: string, data?: object): Promise<T> {
-    return this.makeRequest<T>('put', path, data || {});
+  async put<T>(path: string, data?: object, options: { showToast?: boolean } = {}): Promise<T> {
+    return this.makeRequest<T>('put', path, data || {}, options);
   }
 
-  async patch<T>(path: string, data?: object): Promise<T> {
-    return this.makeRequest<T>('patch', path, data || {});
+  async patch<T>(path: string, data?: object, options: { showToast?: boolean } = {}): Promise<T> {
+    return this.makeRequest<T>('patch', path, data || {}, options);
   }
 
-  async delete<T>(path: string, data?: object): Promise<T> {
-    return this.makeRequest<T>('delete', path, data || {});
+  async delete<T>(path: string, data?: object, options: { showToast?: boolean } = {}): Promise<T> {
+    return this.makeRequest<T>('delete', path, data || {}, options);
   }
 
   async makeRequest<T>(
     method: 'get' | 'post' | 'put' | 'patch' | 'delete',
     path: string,
     data?: object,
+    options: { showToast?: boolean } = {},
   ): Promise<T> {
+    const toast = useToast();
+
+    const { showToast = true } = options;
     const secondArgument = method === 'get' ? { params: data } : data;
-    console.debug(`Making ${method.toUpperCase()} request to ${path} with data:`, secondArgument);
 
     try {
       const response: AxiosResponse<T> =
@@ -250,15 +256,17 @@ export class BackendClient {
     } catch (error: unknown) {
       const message = `WARNING: Unexpected error, from the server!`;
 
-      if (axios.isAxiosError(error)) {
-        if (!error.response) {
-          alert(i18n.global.t('error.networkError'));
-        } else if (!SILENCED_STATUSSES.includes(Number(error.response.status))) {
-          const responseData = error.response?.data as ApiClientResponse<T> | undefined;
-          alert(responseData?.message);
+      if (showToast) {
+        if (axios.isAxiosError(error)) {
+          if (!error.response) {
+            toast.error(i18n.global.t('error.backendUnavailable'));
+          } else if (!SILENCED_STATUSSES.includes(Number(error.response.status))) {
+            const responseData = error.response?.data as ApiClientResponse<T> | undefined;
+            toast.error(responseData?.message);
+          }
+        } else {
+          toast.error(message);
         }
-      } else {
-        alert(message);
       }
 
       throw error;
