@@ -37,11 +37,12 @@
       .toLowerCase();
   }
 
-  for (const domxNodeId in flatDomxNodes) {
-    const cssRules = renderCssRules(flatDomxNodes[domxNodeId]);
+  Object.values(flatDomxNodes).forEach((domxNode) => {
+    const cssRules = renderCssRules(domxNode) || '';
+    const id = domxNode.attributes.id || '';
 
-    if (cssRules !== '') {
+    if (cssRules !== '' && id !== '') {
 -%>
-<%- beautifyCss(`#${domxNodeId} {\n${cssRules}\n}`, { indent_size: 2 }) %>
+<%- beautifyCss(`#${id} {\n${cssRules}\n}`, { indent_size: 2 }) %>
 <% } -%>
-<% } -%>
+<% }); -%>

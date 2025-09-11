@@ -36,17 +36,19 @@
       "name": "MAIN",
       "type": "ELEMENT",
       "attributes": {
-        "id": "i011",
+        "id": "main-container",
         "class": "card"
       },
       "metadata": {
         "figmaNode": {
           "id": "0:1:1",
-          "name": "<main> .card frame 1",
+          "name": "<main>  #main-container .card frame 1",
           "type": "FRAME"
         }
       },
-      "style": {},
+      "style": {
+        "justifyContent": "flex-start"
+      },
       "childrenIds": [
         "i80864888067139280671625",
         "i0112"
