@@ -13,5 +13,15 @@ describe('NodeWrapper', () => {
         expect(instance.cssOverflow()).toBe('auto');
       });
     });
+
+    describe("when 'scrollBehavior' is SCROLLS", () => {
+      it("#overflow should be 'auto'", () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          scrollBehavior: 'SCROLLS',
+        });
+        expect(instance.cssOverflow()).toBe('auto');
+      });
+    });
   });
 });

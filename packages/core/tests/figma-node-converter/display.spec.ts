@@ -4,38 +4,57 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 
 describe('NodeWrapper', () => {
   describe('#display', () => {
-    it('should be blank when layoutMode is NONE', () => {
-      const instance = FigmaNodeConverter.create({
-        ...FigmaExamples.frame,
-        layoutMode: 'NONE',
+    describe('layoutMode is NONE', () => {
+      it('should be blank', () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          layoutMode: 'NONE',
+        });
+        expect(instance.cssDisplay()).toBeFalsy();
       });
-      expect(instance.cssDisplay()).toBeFalsy();
     });
 
-    it('should be flex when layoutMode is HORIZONTAL', () => {
-      const instance = FigmaNodeConverter.create({
-        ...FigmaExamples.frame,
-        layoutMode: 'HORIZONTAL',
+    describe('layoutMode is HORIZONTAL', () => {
+      it('should be flex', () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          layoutMode: 'HORIZONTAL',
+        });
+        expect(instance.cssDisplay()).toBe('flex');
       });
-      expect(instance.cssDisplay()).toBe('flex');
     });
 
-    it('should be flex when layoutMode is VERTICAL and visible is true', () => {
-      const instance = FigmaNodeConverter.create({
-        ...FigmaExamples.frame,
-        layoutMode: 'VERTICAL',
-        visible: true,
+    describe('layoutMode is VERTICAL', () => {
+      it('should be flex', () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          layoutMode: 'VERTICAL',
+          visible: true,
+        });
+        expect(instance.cssDisplay()).toBe('flex');
       });
-      expect(instance.cssDisplay()).toBe('flex');
     });
 
-    it('should be none when layoutMode is present but visible is false', () => {
-      const instance = FigmaNodeConverter.create({
-        ...FigmaExamples.frame,
-        layoutMode: 'VERTICAL',
-        visible: false,
+    describe('layoutMode is GRID', () => {
+      it('should be grid', () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          layoutMode: 'GRID',
+          visible: true,
+        });
+        expect(instance.cssDisplay()).toBe('grid');
       });
-      expect(instance.cssDisplay()).toBe('none');
+    });
+
+    describe('when layoutMode is present but visible is false', () => {
+      it('should be none', () => {
+        const instance = FigmaNodeConverter.create({
+          ...FigmaExamples.frame,
+          layoutMode: 'VERTICAL',
+          visible: false,
+        });
+        expect(instance.cssDisplay()).toBe('none');
+      });
     });
   });
 });
