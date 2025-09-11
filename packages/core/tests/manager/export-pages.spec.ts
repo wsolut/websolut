@@ -137,7 +137,7 @@ describe('Manager#export', () => {
   <link media="all" rel="stylesheet" href="./styles.css"></link>
 </head>
 <body id="i01">
-  <main id="i011" class="card">
+  <main id="main-container" class="card">
     <div id="i80864888067139280671625" class="rounded-image"></div>
     <p id="i0112">This is a text node</p>
   </main>
@@ -158,6 +158,9 @@ describe('Manager#export', () => {
   background: none;
   box-sizing: border-box;
   -webkit-font-smoothing: subpixel-antialiased !important;
+}
+#main-container {
+  justify-content: flex-start;
 }
 #i80864888067139280671625 {
   background-image: url(./assets/2f44802a1e60e100445f7065aeea100fe646b924.png);
@@ -218,6 +221,9 @@ describe('Manager#export', () => {
   background: none;
   box-sizing: border-box;
   -webkit-font-smoothing: subpixel-antialiased !important;
+}
+#main-container {
+  justify-content: flex-start;
 }
 #i80864888067139280671625 {
   background-image: url(./assets/variants/japanese/2f44802a1e60e100445f7065aeea100fe646b924.png);
