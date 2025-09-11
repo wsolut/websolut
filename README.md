@@ -33,8 +33,8 @@ It provides a complete development environment with a **core engine**, a **backe
 
 Choose your platform:
 
-[![Download for macOS](https://img.shields.io/badge/⬇️_Download-macOS-black?logo=apple&style=for-the-badge)](https://github.com/wsolut/websolut/releases/download/v0.2.1-alpha/websolut-desktop-0.2.1-alpha.dmg)
-[![Download for Windows](https://img.shields.io/badge/⬇️_Download-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/wsolut/websolut/releases/download/v0.2.1-alpha/websolut-desktop-0.2.1-alpha-setup.exe.zip)
+[![Download for macOS](https://img.shields.io/badge/⬇️_Download-macOS-black?logo=apple&style=for-the-badge)](https://github.com/wsolut/websolut/releases/download/v0.3.0-alpha/websolut-desktop-0.3.0-alpha.dmg)
+[![Download for Windows](https://img.shields.io/badge/⬇️_Download-Windows-blue?logo=windows&style=for-the-badge)](https://github.com/wsolut/websolut/releases/download/v0.3.0-alpha/websolut-desktop-0.3.0-alpha-setup.exe.zip)
 
 ---
 
