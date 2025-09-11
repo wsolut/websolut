@@ -1,6 +1,5 @@
 {
   "name": "websolut",
-  "version": "0.2.1-alpha",
   "description": "Websolut monorepo",
   "packageManager": "npm@10.9.2",
   "workspaces": [
