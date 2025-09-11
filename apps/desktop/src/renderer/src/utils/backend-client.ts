@@ -252,7 +252,7 @@ export class BackendClient {
 
       if (axios.isAxiosError(error)) {
         if (!error.response) {
-          alert(i18n.global.t('error.networkError'));
+          alert(i18n.global.t('error.backendUnavailable'));
         } else if (!SILENCED_STATUSSES.includes(Number(error.response.status))) {
           const responseData = error.response?.data as ApiClientResponse<T> | undefined;
           alert(responseData?.message);

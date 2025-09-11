@@ -111,7 +111,7 @@ export function useProjects() {
       case 500:
         return 'Internal Server Error';
       case 503:
-        return 'Could not find Vercel on your computer';
+        return 'Network Error';
       default:
         return 'Unknown Error';
     }
@@ -125,6 +125,10 @@ export function useProjects() {
     switch (jobStatus?.errorCode) {
       case 403:
         return `Please check your Vercel Token or generate a new one.`;
+      case 500:
+        return `Something went wrong on our side. Please try again later.`;
+      case 503:
+        return `Network unavailable. Please check your connection and try again.`;
       default:
         return jobStatus?.errorStackTrace || '';
     }

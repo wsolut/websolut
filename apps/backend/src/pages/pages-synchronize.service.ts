@@ -65,7 +65,12 @@ export class PagesSynchronizeService {
 
       await this.pagesExportPreviewService.export(page, project);
     } catch (error: unknown) {
-      if (error instanceof WebsolutCore.FigmaClientInvalidTokenError) {
+      if (error instanceof WebsolutCore.NetworkUnavailableError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 503,
+          errorMessage: 'Network unavailable. Please try again later.',
+        });
+      } else if (error instanceof WebsolutCore.FigmaClientInvalidTokenError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
           errorCode: 403,
           errorMessage: 'Figma Token is invalid or missing',

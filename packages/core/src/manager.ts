@@ -212,8 +212,7 @@ export class Manager {
     });
 
     const nodeId = this.figmaNodeId.replace('-', ':');
-    const nodeData = freshFigmaResponse.nodes[nodeId];
-    if (!nodeData) {
+    if (!freshFigmaResponse.nodes[nodeId]) {
       throw new FigmaClientNoResponseError();
     }
 

@@ -10,7 +10,7 @@ import * as path from 'path';
 import { ProjectEntity } from './project.entity';
 import { errorHasStack, deployToVercelViaApi } from '../utils';
 import { JobStatusesService } from '../job-statuses';
-import { InvalidVercelTokenError } from '../entities';
+import { NetworkUnavailableError, VercelInvalidTokenError } from '../entities';
 
 @Injectable()
 export class ProjectsDeployToVercelService extends BaseService {
@@ -70,7 +70,12 @@ export class ProjectsDeployToVercelService extends BaseService {
         data: { url: vercelDeploymentUrl },
       });
     } catch (error: unknown) {
-      if (error instanceof InvalidVercelTokenError) {
+      if (error instanceof NetworkUnavailableError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 503,
+          errorMessage: 'Network unavailable. Please try again later.',
+        });
+      } else if (error instanceof VercelInvalidTokenError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
           errorCode: 403,
           errorMessage: 'Vercel Token is invalid',

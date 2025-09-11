@@ -24,4 +24,6 @@ export class PortAlreadyInUseError extends BaseError {}
 
 export class VercelCliUnavailableError extends BaseError {}
 
-export class InvalidVercelTokenError extends BaseError {}
+export class VercelInvalidTokenError extends BaseError {}
+
+export class NetworkUnavailableError extends BaseError {}
