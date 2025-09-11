@@ -82,5 +82,21 @@ describe('NodeWrapper', () => {
         expect(instance.cssPosition()).toBe('absolute');
       });
     });
+
+    describe("when a child has 'layoutPositioning' is 'ABSOLUTE'", () => {
+      it("should be 'relative'", () => {
+        const parent = FigmaNodeConverter.create({ ...FigmaExamples.canvas });
+        const instance = FigmaNodeConverter.create(
+          {
+            ...FigmaExamples.frame,
+            layoutPositioning: 'ABSOLUTE',
+          },
+          parent,
+        );
+        parent.children.push(instance);
+
+        expect(parent.cssPosition()).toBe('relative');
+      });
+    });
   });
 });

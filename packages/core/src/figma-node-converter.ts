@@ -282,14 +282,17 @@ export class FigmaNodeConverter {
       bottom: this.cssBottom(),
       boxShadow: this.cssBoxShadow(),
       color: this.cssColor(),
+      columnGap: this.cssColumnGap(),
       display: this.cssDisplay(),
-      flexDirection: this.cssFlexDirection(),
       flex: this.cssFlex(),
+      flexDirection: this.cssFlexDirection(),
       flexWrap: this.cssFlexWrap(),
       fontFamily: this.cssFontFamily(),
       fontSize: this.cssFontSize(),
       fontWeight: this.cssFontWeight(),
       gap: this.cssGap(),
+      gridTemplateColumns: this.cssGridTemplateColumns(),
+      gridTemplateRows: this.cssGridTemplateRows(),
       height: this.cssHeight(),
       justifyContent: this.cssJustifyContent(),
       left: this.cssLeft(),
@@ -299,6 +302,7 @@ export class FigmaNodeConverter {
       maxWidth: this.cssMaxWidth(),
       minHeight: this.cssMinHeight(),
       minWidth: this.cssMinWidth(),
+      mixBlendMode: this.cssMixBlendMode(),
       opacity: this.cssOpacity(),
       overflow: this.cssOverflow(),
       paddingBottom: this.cssPaddingBottom(),
@@ -307,6 +311,7 @@ export class FigmaNodeConverter {
       paddingTop: this.cssPaddingTop(),
       position: this.cssPosition(),
       right: this.cssRight(),
+      rowGap: this.cssRowGap(),
       textAlign: this.cssTextAlign(),
       textDecoration: this.cssTextDecoration(),
       textTransform: this.cssTextTransform(),
@@ -798,6 +803,14 @@ export class FigmaNodeConverter {
     return figmaPaintOrEffectCssRgba(this.nodeFillsTypeSolid);
   }
 
+  cssColumnGap(): string | undefined {
+    if (typeof this.nodeAsFrame.gridColumnGap === 'number') {
+      return this.numberToCssSize(this.nodeAsFrame.gridColumnGap);
+    }
+
+    return undefined;
+  }
+
   cssDisplay(): csstype.Properties['display'] | undefined {
     if (this.node.visible === false) {
       return 'none';
@@ -811,10 +824,10 @@ export class FigmaNodeConverter {
       return 'flex';
     }
 
-    if (
-      ['HORIZONTAL', 'VERTICAL'].includes(this.nodeAsFrame.layoutMode || '')
-    ) {
-      return 'flex';
+    if (this.nodeAsFrame.layoutMode) {
+      if (this.nodeAsFrame.layoutMode === 'HORIZONTAL') return 'flex';
+      if (this.nodeAsFrame.layoutMode === 'VERTICAL') return 'flex';
+      if (this.nodeAsFrame.layoutMode === 'GRID') return 'grid';
     }
 
     return undefined;
@@ -910,6 +923,28 @@ export class FigmaNodeConverter {
     }
 
     return undefined;
+  }
+
+  cssGridTemplateColumns(): string | undefined {
+    if (this.nodeAsFrame.gridColumnsSizing) {
+      return this.nodeAsFrame.gridColumnsSizing;
+    }
+
+    if (!this.nodeAsFrame.gridColumnCount) return undefined;
+
+    // fallback to repeat(gridColumnCount, minmax(0, 1fr)) if no gridColumnsSizing is defined
+    return `repeat(${this.nodeAsFrame.gridColumnCount}, minmax(0, 1fr))`;
+  }
+
+  cssGridTemplateRows(): string | undefined {
+    if (this.nodeAsFrame.gridRowsSizing) {
+      return this.nodeAsFrame.gridRowsSizing;
+    }
+
+    if (!this.nodeAsFrame.gridRowCount) return undefined;
+
+    // fallback to repeat(gridRowCount, minmax(0, 1fr)) if no gridRowsSizing is defined
+    return `repeat(${this.nodeAsFrame.gridRowCount}, minmax(0, 1fr))`;
   }
 
   height(): string | number | undefined {
@@ -1180,6 +1215,17 @@ export class FigmaNodeConverter {
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
   }
 
+  cssMixBlendMode(): csstype.Property.MixBlendMode | undefined {
+    // If blendMode is not "PASS_THROUGH" or "NORMAL", map to mix-blend-mode or background-blend-mode.
+    if (!this.nodeAsFrame.blendMode) return undefined;
+    if (this.nodeAsFrame.blendMode === 'PASS_THROUGH') return undefined;
+    if (this.nodeAsFrame.blendMode === 'NORMAL') return undefined;
+
+    return this.nodeAsFrame.blendMode
+      .toLowerCase()
+      .replace(/_/g, '-') as csstype.Property.MixBlendMode;
+  }
+
   opacity(): number | undefined {
     if (this.nodeAsFrame.opacity !== undefined) {
       return roundFloat(this.nodeAsFrame.opacity);
@@ -1202,6 +1248,10 @@ export class FigmaNodeConverter {
     // }
 
     if (this.nodeAsFrame.clipsContent === true) {
+      return 'auto';
+    }
+
+    if (this.nodeAsFrame.scrollBehavior === 'SCROLLS') {
       return 'auto';
     }
 
@@ -1289,6 +1339,14 @@ export class FigmaNodeConverter {
       return 'absolute';
     }
 
+    if (
+      this.children.some((child) =>
+        ['absolute', 'fixed'].includes(child.cssPosition()),
+      )
+    ) {
+      return 'relative';
+    }
+
     return undefined;
   }
 
@@ -1317,6 +1375,14 @@ export class FigmaNodeConverter {
     const result = this.right();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
+  }
+
+  cssRowGap(): string | undefined {
+    if (typeof this.nodeAsFrame.gridRowGap === 'number') {
+      return this.numberToCssSize(this.nodeAsFrame.gridRowGap);
+    }
+
+    return undefined;
   }
 
   cssTextAlign(): csstype.Property.TextAlign | undefined {
