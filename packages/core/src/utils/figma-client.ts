@@ -3,6 +3,7 @@ import { HttpClient, HttpResponse } from './http-client';
 import {
   FigmaClientInvalidTokenError,
   FigmaClientNoResponseError,
+  NetworkUnavailableError,
 } from '../errors';
 
 export interface FileParams {
@@ -107,18 +108,25 @@ export class FigmaClient extends HttpClient implements FigmaClientInterface {
 
   protected handleResponse(response: HttpResponse<unknown>) {
     if (!response.ok) {
-      const errorData = response.data as { status?: number };
+      const errorData = response.data as { status?: number } | undefined;
+      const status = errorData?.status;
 
-      if (errorData.status === 403) {
+      if (status === 403) {
         throw new FigmaClientInvalidTokenError();
       }
 
-      if (errorData.status === 404) {
+      if (status === 404) {
         throw new FigmaClientNoResponseError();
       }
 
+      if (!errorData) {
+        throw new NetworkUnavailableError(
+          `Network error while fetching ${this.figmaFileKey}: ${response.message ?? 'No response'}`,
+        );
+      }
+
       throw new Error(
-        `Failed to fetch file ${this.figmaFileKey}: ${response.message}`,
+        `Failed to fetch file ${this.figmaFileKey}: ${response.message ?? 'No response data'}`,
       );
     }
   }

@@ -1,3 +1,5 @@
+export class NetworkUnavailableError extends Error {}
+
 export class WebsolutError extends Error {}
 
 export class NoTemplateFoundError extends WebsolutError {}

@@ -42,6 +42,8 @@ export function usePages() {
         return 'File Not Found';
       case 500:
         return 'Internal Server Error';
+      case 503:
+        return 'Network Error';
       default:
         return 'Unknown Error';
     }
@@ -59,6 +61,8 @@ export function usePages() {
         return `Resource not found, the page could have been deleted or access is restricted.`;
       case 500:
         return `The synchronization failed. Please try again shortly. `;
+      case 503:
+        return `Network unavailable. Please check your connection and try again.`;
       default:
         return jobStatus?.errorStackTrace;
     }

@@ -1,13 +1,28 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createHash } from 'crypto';
-import { InvalidVercelTokenError } from '../entities';
+import { NetworkUnavailableError, VercelInvalidTokenError } from '../entities';
 
 type FileEntry = {
   file: string; // posix-style relative path in the deployment
   sha: string;
   size: number;
   absPath: string; // local absolute path (not sent to Vercel)
+};
+
+type HttpJsonResponse = {
+  ok: boolean;
+  status: number;
+  body: unknown;
+  raw?: Response;
+  error?: string;
+};
+
+type HttpBinaryResponse = {
+  ok: boolean;
+  status: number;
+  error?: string;
+  raw?: Response;
 };
 
 const API_BASE = 'https://api.vercel.com';
@@ -40,15 +55,60 @@ function collectFiles(rootDir: string): FileEntry[] {
 async function httpJson(
   url: string,
   init: RequestInit,
-): Promise<{ status: number; body: unknown; raw: Response }> {
-  const res = await fetch(url, init);
-  let body: unknown = null;
-  try {
-    body = await res.json();
-  } catch {
-    // non-JSON body
-  }
-  return { status: res.status, body, raw: res };
+): Promise<HttpJsonResponse> {
+  return new Promise<HttpJsonResponse>((resolve) => {
+    fetch(url, init)
+      .then(async (res: Response) => {
+        let body: unknown = null;
+        try {
+          body = await res.json();
+        } catch {
+          // non-JSON body, try text
+          try {
+            body = await res.text();
+          } catch {
+            body = null;
+          }
+        }
+        resolve({
+          ok: res.ok,
+          status: res.status,
+          body,
+          raw: res,
+        });
+      })
+      .catch((error: Error) => {
+        resolve({
+          ok: false,
+          status: 0,
+          body: null,
+          error: error.message,
+        });
+      });
+  });
+}
+
+async function httpBinary(
+  url: string,
+  init: RequestInit,
+): Promise<HttpBinaryResponse> {
+  return new Promise<HttpBinaryResponse>((resolve) => {
+    fetch(url, init)
+      .then((res: Response) => {
+        resolve({
+          ok: res.ok,
+          status: res.status,
+          raw: res,
+        });
+      })
+      .catch((error: Error) => {
+        resolve({
+          ok: false,
+          status: 0,
+          error: error.message,
+        });
+      });
+  });
 }
 
 async function uploadMissingFiles(
@@ -60,7 +120,7 @@ async function uploadMissingFiles(
     const entry = filesBySha.get(sha);
     if (!entry) continue; // skip unknown
     const data = fs.readFileSync(entry.absPath);
-    const res = await fetch(`${API_BASE}/v2/files`, {
+    const response = await httpBinary(`${API_BASE}/v2/files`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -69,14 +129,19 @@ async function uploadMissingFiles(
       },
       body: data,
     });
-    if (res.status === 401 || res.status === 403) {
-      throw new InvalidVercelTokenError();
+
+    if (response.error) {
+      throw new NetworkUnavailableError();
     }
-    if (!res.ok && res.status !== 409) {
+
+    if (response.status === 401 || response.status === 403) {
+      throw new VercelInvalidTokenError();
+    }
+    if (!response.ok && response.status !== 409) {
       // 409 means file already exists on Vercel
-      const text = await res.text();
+      const text = await response.raw?.text();
       throw new Error(
-        `Failed to upload file (sha: ${sha}) to Vercel: ${res.status} ${text}`,
+        `Failed to upload file (sha: ${sha}) to Vercel: ${response.status} ${text}`,
       );
     }
   }
@@ -103,7 +168,7 @@ async function createDeployment(
     projectSettings: { framework: null },
   };
 
-  const { status, body } = await httpJson(`${API_BASE}/v13/deployments`, {
+  const response = await httpJson(`${API_BASE}/v13/deployments`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -112,12 +177,16 @@ async function createDeployment(
     body: JSON.stringify(payload),
   });
 
-  if (status === 401 || status === 403) {
-    throw new InvalidVercelTokenError();
+  if (response.error) {
+    throw new NetworkUnavailableError();
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new VercelInvalidTokenError();
   }
 
   // If API replies with missing files (varies across versions), extract them
-  const b = body as Partial<CreateDeploymentResponse> | undefined;
+  const b = response.body as Partial<CreateDeploymentResponse> | undefined;
   if (b?.error?.code === 'missing_files' && Array.isArray(b?.error?.missing)) {
     return {
       id: String(b?.id),
@@ -146,18 +215,19 @@ async function pollDeploymentReady(
 ): Promise<{ url?: string; readyState?: string }> {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    const { status, body } = await httpJson(
-      `${API_BASE}/v13/deployments/${id}`,
-      {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const response = await httpJson(`${API_BASE}/v13/deployments/${id}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    if (status === 401 || status === 403) {
-      throw new InvalidVercelTokenError();
+    if (response.error) {
+      throw new NetworkUnavailableError();
     }
-    const b = body as {
+
+    if (response.status === 401 || response.status === 403) {
+      throw new VercelInvalidTokenError();
+    }
+    const b = response.body as {
       url?: string;
       readyState?: string;
       error?: { message?: string };

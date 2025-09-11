@@ -1,7 +1,7 @@
 {
   "error": {
     "somethingWentWrong": "[JA] Something went wrong",
-    "networkError": "[JA] Network error. Please check your connection."
+    "backendUnavailable": "[JA] Could not connect to backend"
   },
   "info": {
     "requestSuccessful": "[JA] Request completed successfully"
