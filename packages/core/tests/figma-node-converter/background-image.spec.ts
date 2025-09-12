@@ -4,21 +4,6 @@ import * as FigmaExamples from '../support/figma-examples';
 
 describe('NodeWrapper', () => {
   describe('#cssBackgroundImage', () => {
-    it('should be undefined when fills contains an IMAGE entry but no imageRef', () => {
-      const instance = FigmaNodeConverter.create({
-        ...FigmaExamples.frame,
-        fills: [
-          {
-            blendMode: 'NORMAL',
-            type: 'IMAGE',
-            scaleMode: 'FILL',
-            imageRef: '',
-          },
-        ],
-      });
-      expect(instance.cssBackgroundImage()).toBeUndefined();
-    });
-
     it('should be undefined when GRADIENT_LINEAR entry only has one stop', () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,

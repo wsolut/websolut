@@ -37,12 +37,9 @@ export class FigmaNodeConverter {
   nodeExportSettings!: FigmaTypes.ExportSetting[];
   nodeExportSettingsFormatSvg?: FigmaTypes.ExportSetting;
   nodeFills!: FigmaTypes.Paint[];
-  nodeFillsTypeSolid!: FigmaTypes.SolidPaint[];
   nodeFillsTypeGradientLinear!: FigmaTypes.GradientPaint[];
-  nodeFillTypeGradientLinear: FigmaTypes.GradientPaint | undefined;
-  nodeFillTypeImage: FigmaTypes.ImagePaint | undefined;
-  nodeLastFillTypeSolid: FigmaTypes.SolidPaint | undefined;
-  nodeImageRef: string | undefined;
+  nodeFillsTypeImage!: FigmaTypes.ImagePaint[];
+  nodeFillsTypeSolid!: FigmaTypes.SolidPaint[];
   nodeStrokes!: FigmaTypes.Paint[];
   nodeStrokesTypeSolid: FigmaTypes.SolidPaint | undefined;
   nodeStyle!: FigmaTypes.TypeStyle;
@@ -112,21 +109,14 @@ export class FigmaNodeConverter {
       this.nodeFills,
       'SOLID',
     );
-    this.nodeLastFillTypeSolid =
-      this.nodeFillsTypeSolid[this.nodeFillsTypeSolid.length - 1];
 
-    this.nodeFillTypeImage = figmaFindVisiblePaint<FigmaTypes.ImagePaint>(
+    this.nodeFillsTypeImage = figmaFilterVisiblePaints<FigmaTypes.ImagePaint>(
       this.nodeFills,
       'IMAGE',
     );
 
     this.nodeFillsTypeGradientLinear =
       figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
-        this.nodeFills,
-        'GRADIENT_LINEAR',
-      );
-    this.nodeFillTypeGradientLinear =
-      figmaFindVisiblePaint<FigmaTypes.GradientPaint>(
         this.nodeFills,
         'GRADIENT_LINEAR',
       );
@@ -143,8 +133,6 @@ export class FigmaNodeConverter {
     this.nodeType = this.node.type || 'UNKNOWN';
 
     this.id = sanitizedId(this.node.id);
-
-    this.nodeImageRef = this.nodeFillTypeImage?.imageRef;
 
     this.domxAttributesFromFigmaNodeName = {
       id: this.id,
@@ -202,9 +190,9 @@ export class FigmaNodeConverter {
   domxAssets(): DomxNodeAssets | undefined {
     const assets: DomxNodeAssets = {};
 
-    if (this.nodeImageRef !== undefined) {
-      assets[this.nodeImageRef] = { format: 'imageRef' };
-    }
+    this.nodeFillsTypeImage.forEach((nodeFillTypeImage) => {
+      assets[nodeFillTypeImage.imageRef] = { format: 'imageRef' };
+    });
 
     if (this.nodeIsSvgType()) {
       assets[this.node.id] = { format: 'svg' };
@@ -488,7 +476,10 @@ export class FigmaNodeConverter {
   cssBackgroundColor(): string | undefined {
     if (this.nodeType === 'TEXT') return undefined;
 
-    let backgroundColor = figmaPaintOrEffectCssRgba(this.nodeLastFillTypeSolid);
+    const nodeLastFillTypeSolid =
+      this.nodeFillsTypeSolid[this.nodeFillsTypeSolid.length - 1];
+
+    let backgroundColor = figmaPaintOrEffectCssRgba(nodeLastFillTypeSolid);
 
     if (!backgroundColor && this.nodeFillsTypeGradientLinear.length > 0) {
       for (let i = this.nodeFillsTypeGradientLinear.length - 1; i >= 0; i--) {
@@ -508,18 +499,19 @@ export class FigmaNodeConverter {
   cssBackgroundImage(): string | undefined {
     const results: string[] = [];
 
-    if ((this.nodeImageRef ?? '') !== '') {
-      results.push(
-        `url(<%- ${this.id}.assets['${this.nodeImageRef}'].filePath || ${this.id}.assets['${this.nodeImageRef}'].url %>)`,
-      );
-    }
+    this.nodeFillsTypeImage.forEach((nodeFillTypeImage) => {
+      const imageRef = nodeFillTypeImage.imageRef;
 
-    if (this.nodeFillsTypeGradientLinear?.length) {
+      results.push(
+        `url(<%- ${this.id}.assets['${imageRef}'].filePath || ${this.id}.assets['${imageRef}'].url %>)`,
+      );
+    });
+
+    if (this.nodeFillsTypeGradientLinear.length > 0) {
       const gradientRules = this.nodeFillsTypeGradientLinear
         .map((paint) => figmaGradientPaintToCssLinearGradient(paint))
-        .filter((rule): rule is string => Boolean(rule));
+        .filter((rule) => (rule ?? '') !== '');
 
-      // Keep existing stacking behavior by appending gradients after image url (if any)
       results.push(...gradientRules);
     }
 
@@ -527,33 +519,48 @@ export class FigmaNodeConverter {
   }
 
   cssBackgroundPosition(): string | undefined {
-    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
+    if (this.nodeFillsTypeImage.length === 0) return undefined;
 
-    if (scaleMode === 'FILL') return 'center';
-    if (scaleMode === 'FIT') return 'center';
-    if (scaleMode === 'TILE') return '0 0';
+    const values = this.nodeFillsTypeImage.map((fill) => {
+      const scaleMode = fill.scaleMode || '';
+      if (scaleMode === 'FILL') return 'center';
+      if (scaleMode === 'FIT') return 'center';
+      if (scaleMode === 'TILE') return '0 0';
+      if (scaleMode === 'STRETCH') return '0 0';
+      return 'center';
+    });
 
-    return undefined;
+    return values.join(', ');
   }
 
   cssBackgroundRepeat(): string | undefined {
-    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
+    if (this.nodeFillsTypeImage.length === 0) return undefined;
 
-    if (scaleMode === 'FILL') return 'no-repeat';
-    if (scaleMode === 'FIT') return 'no-repeat';
-    if (scaleMode === 'TILE') return 'repeat';
+    const values = this.nodeFillsTypeImage.map((fill) => {
+      const scaleMode = fill.scaleMode || '';
+      if (scaleMode === 'FILL') return 'no-repeat';
+      if (scaleMode === 'FIT') return 'no-repeat';
+      if (scaleMode === 'TILE') return 'repeat';
+      if (scaleMode === 'STRETCH') return 'no-repeat';
+      return 'no-repeat';
+    });
 
-    return undefined;
+    return values.join(', ');
   }
 
   cssBackgroundSize(): string | undefined {
-    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
+    if (this.nodeFillsTypeImage.length === 0) return undefined;
 
-    if (scaleMode === 'FILL') return 'cover';
-    if (scaleMode === 'FIT') return 'contain';
-    // if (scaleMode === 'TILE') return 'auto';
+    const values = this.nodeFillsTypeImage.map((fill) => {
+      const scaleMode = fill.scaleMode || '';
+      if (scaleMode === 'FILL') return 'cover';
+      if (scaleMode === 'FIT') return 'contain';
+      if (scaleMode === 'TILE') return 'auto';
+      if (scaleMode === 'STRETCH') return '100% 100%';
+      return 'cover';
+    });
 
-    return undefined;
+    return values.join(', ');
   }
 
   borderBottomWidth(): number | undefined {
@@ -822,7 +829,10 @@ export class FigmaNodeConverter {
   cssColor(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
 
-    return figmaPaintOrEffectCssRgba(this.nodeLastFillTypeSolid);
+    const nodeLastFillTypeSolid =
+      this.nodeFillsTypeSolid[this.nodeFillsTypeSolid.length - 1];
+
+    return figmaPaintOrEffectCssRgba(nodeLastFillTypeSolid);
   }
 
   cssColumnGap(): string | undefined {

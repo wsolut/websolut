@@ -33,5 +33,32 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBackgroundSize()).toBe('cover');
     });
+
+    it('should return comma-separated sizes for multiple IMAGE fills', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        fills: [
+          {
+            blendMode: 'NORMAL',
+            type: 'IMAGE',
+            scaleMode: 'FIT',
+            imageRef: '',
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'IMAGE',
+            scaleMode: 'TILE',
+            imageRef: '',
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'IMAGE',
+            scaleMode: 'FILL',
+            imageRef: '',
+          },
+        ],
+      });
+      expect(instance.cssBackgroundSize()).toBe('contain, auto, cover');
+    });
   });
 });
