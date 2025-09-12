@@ -314,6 +314,7 @@ export class FigmaNodeConverter {
       rowGap: this.cssRowGap(),
       textAlign: this.cssTextAlign(),
       textDecoration: this.cssTextDecoration(),
+      textShadow: this.cssTextShadow(),
       textTransform: this.cssTextTransform(),
       top: this.cssTop(),
       transform: this.cssTransform(),
@@ -751,6 +752,9 @@ export class FigmaNodeConverter {
   }
 
   cssBoxShadow(): string | undefined {
+    // For text nodes we should use text-shadow
+    if (this.nodeType === 'TEXT') return undefined;
+
     const results: string[] = [];
 
     this.nodeEffectsTypeDropShadow.forEach((dropShadowEffect) => {
@@ -779,6 +783,23 @@ export class FigmaNodeConverter {
     });
 
     return results.length > 0 ? results.join(', ') : undefined;
+  }
+
+  cssTextShadow(): string | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+
+    if (this.nodeEffectsTypeDropShadow.length === 0) return undefined;
+
+    const results = this.nodeEffectsTypeDropShadow.map((eff) =>
+      [
+        this.numberToCssSize(roundFloat(eff.offset.x)),
+        this.numberToCssSize(roundFloat(eff.offset.y)),
+        this.numberToCssSize(roundFloat(eff.radius)),
+        figmaPaintOrEffectCssRgba(eff),
+      ].join(' '),
+    );
+
+    return results.join(', ');
   }
 
   cssColor(): string | undefined {

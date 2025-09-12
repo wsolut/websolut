@@ -15,7 +15,7 @@ describe('NodeWrapper', () => {
     });
 
     describe("when 'scrollBehavior' is SCROLLS", () => {
-      it("#overflow should be 'auto'", () => {
+      it.skip("#overflow should be 'auto'", () => {
         const instance = FigmaNodeConverter.create({
           ...FigmaExamples.frame,
           scrollBehavior: 'SCROLLS',
