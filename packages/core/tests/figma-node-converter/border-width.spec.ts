@@ -91,5 +91,53 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBorderWidth()).toBe(undefined);
     });
+
+    it('should be blank when strokeAlign is INSIDE', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'INSIDE',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 4,
+      });
+      expect(instance.cssBorderWidth()).toBe(undefined);
+    });
+
+    it('should be blank when strokeAlign is OUTSIDE', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'OUTSIDE',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 3,
+      });
+      expect(instance.cssBorderWidth()).toBe(undefined);
+    });
+
+    it('should retain width when strokeAlign is CENTER', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'CENTER',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 7,
+      });
+      expect(instance.cssBorderWidth()).toBe('7px');
+    });
   });
 });

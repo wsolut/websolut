@@ -78,5 +78,42 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBoxShadow()).toBe(undefined);
     });
+
+    it('should include an inset ring when strokeAlign is INSIDE', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'INSIDE',
+        strokeWeight: 5,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+      });
+      const val = instance.cssBoxShadow();
+      expect(val).toBeDefined();
+      expect(val).toContain('inset');
+      expect(val).toContain('5px');
+      expect(val).toContain('rgba(');
+    });
+
+    it('should not inject a ring for CENTER alignment without effects', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'CENTER',
+        strokeWeight: 5,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        effects: [],
+      });
+      expect(instance.cssBoxShadow()).toBeUndefined();
+    });
   });
 });
