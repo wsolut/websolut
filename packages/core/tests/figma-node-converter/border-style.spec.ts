@@ -115,5 +115,53 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBorderStyle()).toBe('dotted');
     });
+
+    it('should be blank when strokeAlign is INSIDE (gated off)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'INSIDE',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 2,
+      });
+      expect(instance.cssBorderStyle()).toBeUndefined();
+    });
+
+    it('should be blank when strokeAlign is OUTSIDE (gated off)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'OUTSIDE',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 2,
+      });
+      expect(instance.cssBorderStyle()).toBeUndefined();
+    });
+
+    it('should remain set when strokeAlign is CENTER', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'CENTER',
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 2,
+      });
+      expect(instance.cssBorderStyle()).toBe('solid');
+    });
   });
 });

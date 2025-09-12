@@ -41,6 +41,9 @@ export class FigmaNodeConverter {
   nodeStrokes!: FigmaTypes.Paint[];
   nodeStyle!: FigmaTypes.TypeStyle;
   nodeType!: string;
+  uniformStrokeWeight: number | undefined = undefined;
+  topMostSolidStroke: FigmaTypes.SolidPaint | undefined = undefined;
+  topMostSolidStrokeColor: string | undefined = undefined;
 
   domNameFromFigmaNodeName: string | undefined;
   domxAttributesFromFigmaNodeName!: DomxNodeAttributes;
@@ -117,6 +120,36 @@ export class FigmaNodeConverter {
     this.nodeStyle = this.nodeAsText.style || ({} as FigmaTypes.TypeStyle);
 
     this.nodeType = this.node.type || 'UNKNOWN';
+
+    // Stroke helpers
+    const visibleStrokes = (this.nodeStrokes || []).filter((p) => {
+      const visible = (p as { visible?: boolean }).visible;
+      return visible !== false;
+    });
+    if (visibleStrokes.length > 0) {
+      const topMost = visibleStrokes[visibleStrokes.length - 1];
+
+      if (topMost.type === 'SOLID') {
+        this.topMostSolidStroke = topMost;
+      }
+    }
+
+    this.topMostSolidStrokeColor = figmaPaintOrEffectCssRgba(
+      this.topMostSolidStroke,
+    );
+
+    const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
+    if (strokeWeights) {
+      if (
+        strokeWeights.bottom === strokeWeights.top &&
+        strokeWeights.top === strokeWeights.left &&
+        strokeWeights.left === strokeWeights.right
+      ) {
+        this.uniformStrokeWeight = strokeWeights.top;
+      }
+    } else if (this.nodeAsFrame.strokeWeight !== undefined) {
+      this.uniformStrokeWeight = this.nodeAsFrame.strokeWeight;
+    }
 
     this.id = sanitizedId(this.node.id);
 
@@ -249,7 +282,9 @@ export class FigmaNodeConverter {
       alignContent: this.cssAlignContent(),
       alignItems: this.cssAlignItems(),
       alignSelf: this.cssAlignSelf(),
+      backdropFilter: this.cssBackdropFilter(),
       backgroundBlendMode: this.cssBackgroundBlendMode(),
+      backgroundClip: this.cssBackgroundClip(),
       backgroundColor: this.cssBackgroundColor(),
       backgroundImage: this.cssBackgroundImage(),
       backgroundPosition: this.cssBackgroundPosition(),
@@ -265,25 +300,22 @@ export class FigmaNodeConverter {
       borderWidth: this.cssBorderWidth(),
       bottom: this.cssBottom(),
       boxShadow: this.cssBoxShadow(),
-      filter: this.cssFilter(),
-      WebkitFilter: this.cssFilter(),
       color: this.cssColor(),
       columnGap: this.cssColumnGap(),
       display: this.cssDisplay(),
+      filter: this.cssFilter(),
       flex: this.cssFlex(),
       flexDirection: this.cssFlexDirection(),
       flexWrap: this.cssFlexWrap(),
       fontFamily: this.cssFontFamily(),
       fontSize: this.cssFontSize(),
       fontStyle: this.cssFontStyle(),
-      fontWeight: this.cssFontWeight(),
       fontVariantCaps: this.cssFontVariantCaps(),
+      fontWeight: this.cssFontWeight(),
       gap: this.cssGap(),
+      gridAutoFlow: this.cssGridAutoFlow(),
       gridTemplateColumns: this.cssGridTemplateColumns(),
       gridTemplateRows: this.cssGridTemplateRows(),
-      gridAutoFlow: this.cssGridAutoFlow(),
-      placeContent: this.cssPlaceContent(),
-      placeItems: this.cssPlaceItems(),
       height: this.cssHeight(),
       justifyContent: this.cssJustifyContent(),
       left: this.cssLeft(),
@@ -296,18 +328,17 @@ export class FigmaNodeConverter {
       minWidth: this.cssMinWidth(),
       mixBlendMode: this.cssMixBlendMode(),
       opacity: this.cssOpacity(),
+      outline: this.cssOutline(),
       overflow: this.cssOverflow(),
-      backdropFilter: this.cssBackdropFilter(),
-      WebkitBackdropFilter: this.cssBackdropFilter(),
-      backgroundClip: this.cssBackgroundClip(),
       paddingBottom: this.cssPaddingBottom(),
       paddingLeft: this.cssPaddingLeft(),
       paddingRight: this.cssPaddingRight(),
       paddingTop: this.cssPaddingTop(),
+      placeContent: this.cssPlaceContent(),
+      placeItems: this.cssPlaceItems(),
       position: this.cssPosition(),
       right: this.cssRight(),
       rowGap: this.cssRowGap(),
-      whiteSpace: this.cssWhiteSpace(),
       textAlign: this.cssTextAlign(),
       textDecoration: this.cssTextDecoration(),
       textShadow: this.cssTextShadow(),
@@ -315,6 +346,9 @@ export class FigmaNodeConverter {
       top: this.cssTop(),
       transform: this.cssTransform(),
       transformOrigin: this.cssTransformOrigin(),
+      WebkitBackdropFilter: this.cssBackdropFilter(),
+      WebkitFilter: this.cssFilter(),
+      whiteSpace: this.cssWhiteSpace(),
       width: this.cssWidth(),
       writingMode: this.cssWritingMode(),
     };
@@ -610,25 +644,27 @@ export class FigmaNodeConverter {
   }
 
   cssBorderBottomWidth(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     const result = this.borderBottomWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
   }
 
   cssBorderColor(): string | undefined {
-    // Choose the top-most visible stroke paint. If it's SOLID, map to rgba. Otherwise, borders aren't representable.
-    const visibleStrokes = (this.nodeStrokes || []).filter((p) => {
-      const visible = (p as { visible?: boolean }).visible;
-      return visible !== false;
-    });
+    // Suppress for INSIDE/OUTSIDE; emulate differently
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
 
-    if (visibleStrokes.length === 0) return undefined;
-
-    const topMost = visibleStrokes[visibleStrokes.length - 1];
-
-    if (topMost.type !== 'SOLID') return undefined;
-
-    return figmaPaintOrEffectCssRgba(topMost);
+    return this.topMostSolidStrokeColor;
   }
 
   borderLeftWidth(): number | undefined {
@@ -650,6 +686,12 @@ export class FigmaNodeConverter {
   }
 
   cssBorderLeftWidth(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     const result = this.borderLeftWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -703,6 +745,12 @@ export class FigmaNodeConverter {
   }
 
   cssBorderRightWidth(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     const result = this.borderRightWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -723,6 +771,12 @@ export class FigmaNodeConverter {
   // }
 
   cssBorderStyle(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     if (!this.cssBorderColor()) return undefined;
 
     if (this.nodeAsFrame.strokeDashes && this.nodeAsFrame.strokeDashes.length) {
@@ -780,6 +834,12 @@ export class FigmaNodeConverter {
   }
 
   cssBorderTopWidth(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     const result = this.borderTopWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -808,6 +868,12 @@ export class FigmaNodeConverter {
   }
 
   cssBorderWidth(): string | undefined {
+    if (
+      this.nodeAsFrame.strokeAlign &&
+      this.nodeAsFrame.strokeAlign !== 'CENTER'
+    ) {
+      return undefined;
+    }
     const result = this.borderWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -879,7 +945,39 @@ export class FigmaNodeConverter {
       );
     });
 
+    // Emulate INSIDE stroke with an inset ring box-shadow if applicable
+    if (this.nodeAsFrame.strokeAlign === 'INSIDE') {
+      const color = this.topMostSolidStrokeColor;
+      const width = this.uniformStrokeWeight;
+
+      if (color && typeof width === 'number' && width > 0) {
+        results.push(
+          [
+            this.numberToCssSize(0),
+            this.numberToCssSize(0),
+            this.numberToCssSize(0),
+            this.numberToCssSize(roundFloat(width)),
+            color,
+            'inset',
+          ].join(' '),
+        );
+      }
+    }
+
     return results.length > 0 ? results.join(', ') : undefined;
+  }
+
+  cssOutline(): string | undefined {
+    // Emulate OUTSIDE stroke with outline when uniform width and solid color
+    if (this.nodeAsFrame.strokeAlign === 'OUTSIDE') {
+      const color = this.topMostSolidStrokeColor;
+      const width = this.uniformStrokeWeight;
+
+      if (color && typeof width === 'number' && width > 0) {
+        return `${this.numberToCssSize(roundFloat(width))} solid ${color}`;
+      }
+    }
+    return undefined;
   }
 
   cssFilter(): string | undefined {
@@ -1166,9 +1264,10 @@ export class FigmaNodeConverter {
     if (this.nodeAsFrame.primaryAxisAlignItems === 'CENTER')
       justifyPart = 'center';
     if (this.nodeAsFrame.primaryAxisAlignItems === 'SPACE_BETWEEN') {
-      justifyPart = (this.nodeAsFrame.children?.length || 0) <= 1
-        ? 'center'
-        : 'space-between';
+      justifyPart =
+        (this.nodeAsFrame.children?.length || 0) <= 1
+          ? 'center'
+          : 'space-between';
     }
 
     if (!alignPart && !justifyPart) return undefined;
