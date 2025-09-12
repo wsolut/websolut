@@ -45,12 +45,21 @@ describe('NodeWrapper', () => {
   });
 
   describe("when 'counterAxisAlignItems' is 'BASELINE'", () => {
-    it("#align_items should be 'space-between'", () => {
+    it("#align_items should be 'baseline'", () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,
         counterAxisAlignItems: 'BASELINE',
       });
-      expect(instance.cssAlignItems()).toBe('space-between');
+      expect(instance.cssAlignItems()).toBe('baseline');
+    });
+
+    it('returns undefined for GRID layout (use place-items baseline)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        layoutMode: 'GRID',
+        counterAxisAlignItems: 'BASELINE',
+      });
+      expect(instance.cssAlignItems()).toBeUndefined();
     });
   });
 });

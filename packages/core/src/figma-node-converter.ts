@@ -537,7 +537,7 @@ export class FigmaNodeConverter {
     }
 
     if (this.nodeAsFrame.counterAxisAlignItems === 'BASELINE') {
-      return 'space-between'; // Need to check if this is correct, because the ruby code was "figmaNodeAsFrame.counterAxisAlignItems === 'SPACE_BETWEEN'"
+      return 'baseline';
     }
 
     return undefined;
