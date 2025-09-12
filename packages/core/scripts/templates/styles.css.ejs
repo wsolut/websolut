@@ -1,0 +1,48 @@
+/* Reset rules to reduce browser inconsistencies regarding certain default values */
+*, *:before, *:after {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-sizing: border-box;
+  -webkit-font-smoothing: subpixel-antialiased !important;
+}
+<%
+  const flatDomxNodes = document.nodes;
+
+  function renderCssRules(domxNode) {
+    const properties = Object.keys(domxNode.style || {})
+      .map((property) => {
+        let value = domxNode.style[property];
+
+        if (typeof value === 'string' && value.match(/%.*%/)) {
+          value = render(value, flatDomxNodes);
+        }
+
+        return ((value ?? '') !== '') ? `${kebabCase(property)}: ${value};` : undefined;
+      })
+      .filter((value) => value !== undefined);
+
+    if (properties.length === 0) {
+      return '';
+    }
+
+    return properties.join('\n');
+  }
+
+  function kebabCase(value) {
+    return value
+      .replace(/([a-z])([A-Z])/g, '$1-$2')
+      .replace(/[\s_]+/g, '-')
+      .toLowerCase();
+  }
+
+  Object.values(flatDomxNodes).forEach((domxNode) => {
+    const cssRules = renderCssRules(domxNode) || '';
+    const id = domxNode.attributes.id || '';
+
+    if (cssRules !== '' && id !== '') {
+-%>
+<%- beautifyCss(`#${id} {\n${cssRules}\n}`, { indent_size: 2 }) %>
+<% } -%>
+<% }); -%>

@@ -112,7 +112,9 @@ export class FigmaClient extends HttpClient implements FigmaClientInterface {
       const status = errorData?.status;
 
       if (status === 403) {
-        throw new FigmaClientInvalidTokenError();
+        throw new FigmaClientInvalidTokenError(
+          'Invalid Figma token or insufficient permissions',
+        );
       }
 
       if (status === 404) {

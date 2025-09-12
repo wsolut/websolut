@@ -9,6 +9,7 @@ export default tseslint.config(
     ignores: [
       'dist',
       'examples',
+      'scripts',
       'coverage',
       'eslint.config.mjs',
       'tsup.config.ts',
