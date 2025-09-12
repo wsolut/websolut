@@ -276,7 +276,9 @@ export class FigmaNodeConverter {
       flexWrap: this.cssFlexWrap(),
       fontFamily: this.cssFontFamily(),
       fontSize: this.cssFontSize(),
+      fontStyle: this.cssFontStyle(),
       fontWeight: this.cssFontWeight(),
+      fontVariantCaps: this.cssFontVariantCaps(),
       gap: this.cssGap(),
       gridTemplateColumns: this.cssGridTemplateColumns(),
       gridTemplateRows: this.cssGridTemplateRows(),
@@ -285,6 +287,7 @@ export class FigmaNodeConverter {
       left: this.cssLeft(),
       letterSpacing: this.cssLetterSpacing(),
       lineHeight: this.cssLineHeight(),
+      marginBottom: this.cssMarginBottom(),
       maxHeight: this.cssMaxHeight(),
       maxWidth: this.cssMaxWidth(),
       minHeight: this.cssMinHeight(),
@@ -302,6 +305,7 @@ export class FigmaNodeConverter {
       position: this.cssPosition(),
       right: this.cssRight(),
       rowGap: this.cssRowGap(),
+      whiteSpace: this.cssWhiteSpace(),
       textAlign: this.cssTextAlign(),
       textDecoration: this.cssTextDecoration(),
       textShadow: this.cssTextShadow(),
@@ -1039,6 +1043,24 @@ export class FigmaNodeConverter {
     return undefined;
   }
 
+  cssFontStyle(): csstype.Property.FontStyle | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+
+    // Prefer explicit italic boolean if present
+    type TypeStyleExtended = FigmaTypes.TypeStyle & {
+      italic?: boolean;
+      fontPostScriptName?: string;
+    };
+    const styleExtended = this.nodeStyle as TypeStyleExtended;
+    if (styleExtended.italic === true) return 'italic';
+
+    // Check common style name hints
+    const styleName = styleExtended.fontPostScriptName || '';
+    if (/italic|oblique/i.test(styleName)) return 'italic';
+
+    return undefined;
+  }
+
   gap(): number[] | undefined {
     if (this.cssJustifyContent() === 'space-between') {
       return undefined;
@@ -1067,6 +1089,20 @@ export class FigmaNodeConverter {
     return undefined;
   }
 
+  cssFontVariantCaps(): csstype.Property.FontVariantCaps | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+
+    if (this.nodeStyle.textCase === 'SMALL_CAPS') {
+      return 'small-caps';
+    }
+
+    if (this.nodeStyle.textCase === 'SMALL_CAPS_FORCED') {
+      return 'all-small-caps';
+    }
+
+    return undefined;
+  }
+
   cssGridTemplateColumns(): string | undefined {
     if (this.nodeAsFrame.gridColumnsSizing) {
       return this.nodeAsFrame.gridColumnsSizing;
@@ -1087,6 +1123,18 @@ export class FigmaNodeConverter {
 
     // fallback to repeat(gridRowCount, minmax(0, 1fr)) if no gridRowsSizing is defined
     return `repeat(${this.nodeAsFrame.gridRowCount}, minmax(0, 1fr))`;
+  }
+
+  cssWhiteSpace(): csstype.Property.WhiteSpace | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+
+    const text = this.nodeAsText?.characters || '';
+    // Preserve hard line breaks and consecutive spaces
+    if (/[\n\r\t]/.test(text) || / {2,}/.test(text)) {
+      return 'pre-wrap';
+    }
+
+    return undefined;
   }
 
   height(): string | number | undefined {
@@ -1117,6 +1165,31 @@ export class FigmaNodeConverter {
 
     if (this.nodeAsFrame.size?.y !== undefined) {
       return roundFloat(this.nodeAsFrame.size.y);
+    }
+
+    return undefined;
+  }
+
+  cssMarginBottom(): string | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+
+    type TypeStyleExtended = FigmaTypes.TypeStyle & {
+      paragraphSpacing?: number;
+    };
+    const spacing = (this.nodeStyle as TypeStyleExtended).paragraphSpacing;
+    if (
+      typeof spacing === 'number' &&
+      !Number.isNaN(spacing) &&
+      spacing !== 0
+    ) {
+      // Skip margin for last TEXT in its immediate parent group/frame
+      const siblings = this.parent?.children || [];
+      const idx = siblings.findIndex((c) => c === this);
+      const hasNextTextSibling = siblings
+        .slice(idx + 1)
+        .some((c) => c.nodeType === 'TEXT');
+      if (!hasNextTextSibling) return undefined;
+      return this.numberToCssSize(roundFloat(spacing));
     }
 
     return undefined;
@@ -1573,15 +1646,7 @@ export class FigmaNodeConverter {
       return 'capitalize';
     }
 
-    if (this.nodeStyle.textCase === 'SMALL_CAPS') {
-      // return 'small-caps';
-      return 'lowercase';
-    }
-
-    if (this.nodeStyle.textCase === 'SMALL_CAPS_FORCED') {
-      // return 'small-caps';
-      return 'lowercase';
-    }
+    // SMALL_CAPS and SMALL_CAPS_FORCED are handled via fontVariantCaps
 
     return undefined;
   }
