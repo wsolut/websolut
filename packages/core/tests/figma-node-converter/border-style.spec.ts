@@ -83,5 +83,37 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBorderStyle()).toBe('dashed');
     });
+
+    it("should be 'dotted' when strokeDashes approximates dotting with near-zero dash and positive gaps", () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 2,
+        strokeDashes: [0, 4], // dash ~0, gap 4 => dotted
+      });
+      expect(instance.cssBorderStyle()).toBe('dotted');
+    });
+
+    it("should be 'dotted' when all dash/gap segments are very short relative to weight", () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+          },
+        ],
+        strokeWeight: 6,
+        strokeDashes: [2, 2, 2, 2], // all segments <= weight*0.5 -> dotted
+      });
+      expect(instance.cssBorderStyle()).toBe('dotted');
+    });
   });
 });
