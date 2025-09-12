@@ -76,17 +76,11 @@ const dots = computed(() => {
     <!-- Error State -->
     <div v-else-if="!deploySuccessful" class="flex flex-col items-center text-center px-4">
       <Icon icon="material-symbols:error-outline-rounded" class="text-8xl text-red-500" />
-      <p class="text-xl font-extralight mt-6 break-words max-w-full sm:max-w-md">
-        Deploy failed
-      </p>
-      <p
-        class="text-gray-400 mt-2 break-words max-w-full sm:max-w-md text-center"
-      >
+      <p class="text-xl font-extralight mt-6 break-words max-w-full sm:max-w-md">Deploy failed</p>
+      <p class="text-gray-400 mt-2 break-words max-w-full sm:max-w-md text-center">
         {{ errorTitle }}
       </p>
-      <p
-        class="text-gray-400 mt-1 break-words max-w-full sm:max-w-md text-center"
-      >
+      <p class="text-gray-400 mt-1 break-words max-w-full sm:max-w-md text-center">
         {{ errorDescription }}
       </p>
       <div class="mt-8">
