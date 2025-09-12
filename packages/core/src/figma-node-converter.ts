@@ -281,6 +281,9 @@ export class FigmaNodeConverter {
       gap: this.cssGap(),
       gridTemplateColumns: this.cssGridTemplateColumns(),
       gridTemplateRows: this.cssGridTemplateRows(),
+      gridAutoFlow: this.cssGridAutoFlow(),
+      placeContent: this.cssPlaceContent(),
+      placeItems: this.cssPlaceItems(),
       height: this.cssHeight(),
       justifyContent: this.cssJustifyContent(),
       left: this.cssLeft(),
@@ -430,6 +433,9 @@ export class FigmaNodeConverter {
   }
 
   cssAlignItems(): csstype.Properties['alignItems'] | undefined {
+    // For grid containers, prefer place-items shorthand and skip align-items
+    if (this.nodeAsFrame.layoutMode === 'GRID') return undefined;
+
     if (this.nodeType === 'TEXT') {
       // AUTO LAYOUT RULE 1:1
       if (this.nodeStyle.textAlignVertical === 'TOP') {
@@ -1124,6 +1130,99 @@ export class FigmaNodeConverter {
     return `repeat(${this.nodeAsFrame.gridRowCount}, minmax(0, 1fr))`;
   }
 
+  cssGridAutoFlow(): csstype.Property.GridAutoFlow | undefined {
+    if (this.nodeAsFrame.layoutMode !== 'GRID') return undefined;
+
+    const hasCols =
+      typeof this.nodeAsFrame.gridColumnCount === 'number' &&
+      this.nodeAsFrame.gridColumnCount > 0;
+    const hasRows =
+      typeof this.nodeAsFrame.gridRowCount === 'number' &&
+      this.nodeAsFrame.gridRowCount > 0;
+
+    if (hasCols && !hasRows) return 'row';
+    if (hasRows && !hasCols) return 'column';
+
+    // If both are set or neither is set, let browser default apply
+    return undefined;
+  }
+
+  cssPlaceContent(): string | undefined {
+    if (this.nodeAsFrame.layoutMode !== 'GRID') return undefined;
+
+    // Align-content (block/cross axis for grid)
+    let alignPart: string | undefined;
+    if (this.nodeAsFrame.counterAxisAlignContent === 'AUTO')
+      alignPart = 'normal';
+    if (this.nodeAsFrame.counterAxisAlignContent === 'SPACE_BETWEEN')
+      alignPart = 'space-between';
+
+    // Justify-content (inline/main axis for grid) mapped from primaryAxisAlignItems
+    let justifyPart: string | undefined;
+    if (this.nodeAsFrame.primaryAxisAlignItems === 'MIN')
+      justifyPart = 'flex-start';
+    if (this.nodeAsFrame.primaryAxisAlignItems === 'MAX')
+      justifyPart = 'flex-end';
+    if (this.nodeAsFrame.primaryAxisAlignItems === 'CENTER')
+      justifyPart = 'center';
+    if (this.nodeAsFrame.primaryAxisAlignItems === 'SPACE_BETWEEN') {
+      justifyPart = (this.nodeAsFrame.children?.length || 0) <= 1
+        ? 'center'
+        : 'space-between';
+    }
+
+    if (!alignPart && !justifyPart) return undefined;
+
+    return `${alignPart || 'normal'} ${justifyPart || 'normal'}`;
+  }
+
+  cssPlaceItems(): string | undefined {
+    if (this.nodeAsFrame.layoutMode !== 'GRID') return undefined;
+
+    // Align-items mapped from counterAxisAlignItems
+    let alignItemsPart: string | undefined;
+    switch (this.nodeAsFrame.counterAxisAlignItems) {
+      case 'MIN':
+        alignItemsPart = 'start';
+        break;
+      case 'MAX':
+        alignItemsPart = 'end';
+        break;
+      case 'CENTER':
+        alignItemsPart = 'center';
+        break;
+      case 'BASELINE':
+        alignItemsPart = 'baseline';
+        break;
+      default:
+        break;
+    }
+
+    // Justify-items mapped from primaryAxisAlignItems
+    let justifyItemsPart: string | undefined;
+    switch (this.nodeAsFrame.primaryAxisAlignItems) {
+      case 'MIN':
+        justifyItemsPart = 'start';
+        break;
+      case 'MAX':
+        justifyItemsPart = 'end';
+        break;
+      case 'CENTER':
+        justifyItemsPart = 'center';
+        break;
+      case 'SPACE_BETWEEN':
+        // Not valid for items; approximate with center
+        justifyItemsPart = 'center';
+        break;
+      default:
+        break;
+    }
+
+    if (!alignItemsPart && !justifyItemsPart) return undefined;
+
+    return `${alignItemsPart || 'normal'} ${justifyItemsPart || 'normal'}`;
+  }
+
   cssWhiteSpace(): csstype.Property.WhiteSpace | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
 
@@ -1201,6 +1300,9 @@ export class FigmaNodeConverter {
   }
 
   cssJustifyContent(): string | undefined {
+    // For grid containers, prefer place-content shorthand and skip justify-content
+    if (this.nodeAsFrame.layoutMode === 'GRID') return undefined;
+
     if (this.nodeAsFrame.primaryAxisAlignItems === 'MIN') {
       return 'flex-start';
     }

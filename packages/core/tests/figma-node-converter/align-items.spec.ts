@@ -3,6 +3,17 @@ import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 
 describe('NodeWrapper', () => {
+  describe('grid shorthand guard', () => {
+    it('returns undefined when layoutMode is GRID (use place-items)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        layoutMode: 'GRID',
+        counterAxisAlignItems: 'CENTER',
+      });
+      expect(instance.cssAlignItems()).toBeUndefined();
+    });
+  });
+
   describe("when 'counterAxisAlignItems' is 'MIN'", () => {
     it("#align_items should be 'flex-start'", () => {
       const instance = FigmaNodeConverter.create({
