@@ -6,6 +6,8 @@ export * from './figma-client';
 export * from './figma-filter-visible-effects';
 export * from './figma-filter-visible-paints';
 export * from './figma-gradient-paint-to-css-linear-gradient';
+export * from './figma-gradient-paint-to-css-radial-gradient';
+export * from './figma-gradient-paint-to-css-conic-gradient';
 export * from './figma-gradient-paint-to-css-rgba';
 export * from './figma-gradient-to-angle';
 export * from './figma-paint-or-effect-css-rgba';

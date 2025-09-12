@@ -5,6 +5,8 @@ import {
   roundFloat,
   sanitizedId,
   figmaGradientPaintToCssRgba,
+  figmaGradientPaintToCssRadialGradient,
+  figmaGradientPaintToCssConicGradient,
   figmaFilterVisibleEffects,
   figmaFilterVisiblePaints,
 } from './utils';
@@ -542,11 +544,38 @@ export class FigmaNodeConverter {
       );
     });
 
+    // Linear gradients
     if (this.nodeFillsTypeGradientLinear.length > 0) {
       const gradientRules = this.nodeFillsTypeGradientLinear
         .map((paint) => figmaGradientPaintToCssLinearGradient(paint))
         .filter((rule) => (rule ?? '') !== '');
 
+      results.push(...gradientRules);
+    }
+
+    // Radial gradients
+    const nodeFillsTypeGradientRadial =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_RADIAL',
+      );
+    if (nodeFillsTypeGradientRadial.length > 0) {
+      const gradientRules = nodeFillsTypeGradientRadial
+        .map((paint) => figmaGradientPaintToCssRadialGradient(paint))
+        .filter((rule) => (rule ?? '') !== '');
+      results.push(...gradientRules);
+    }
+
+    // Conic gradients (angular)
+    const nodeFillsTypeGradientConic =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_ANGULAR',
+      );
+    if (nodeFillsTypeGradientConic.length > 0) {
+      const gradientRules = nodeFillsTypeGradientConic
+        .map((paint) => figmaGradientPaintToCssConicGradient(paint))
+        .filter((rule) => (rule ?? '') !== '');
       results.push(...gradientRules);
     }
 
@@ -572,9 +601,29 @@ export class FigmaNodeConverter {
     // Gradient layers that actually render
     this.nodeFillsTypeGradientLinear.forEach((paint) => {
       const gradientRule = figmaGradientPaintToCssLinearGradient(paint);
-      if (gradientRule) {
-        results.push(toCssBlend(paint.blendMode));
-      }
+      if (gradientRule) results.push(toCssBlend(paint.blendMode));
+    });
+
+    // Radial gradients
+    const nodeFillsTypeGradientRadial =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_RADIAL',
+      );
+    nodeFillsTypeGradientRadial.forEach((paint) => {
+      const gradientRule = figmaGradientPaintToCssRadialGradient(paint);
+      if (gradientRule) results.push(toCssBlend(paint.blendMode));
+    });
+
+    // Conic gradients
+    const nodeFillsTypeGradientConic =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_ANGULAR',
+      );
+    nodeFillsTypeGradientConic.forEach((paint) => {
+      const gradientRule = figmaGradientPaintToCssConicGradient(paint);
+      if (gradientRule) results.push(toCssBlend(paint.blendMode));
     });
 
     return results.length > 0 ? results.join(', ') : undefined;
