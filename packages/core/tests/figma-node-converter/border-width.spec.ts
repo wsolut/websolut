@@ -139,5 +139,29 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBorderWidth()).toBe('7px');
     });
+
+    it('falls back to strokeWeight when using border-image (CENTER + gradient)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokeAlign: 'CENTER',
+        strokeWeight: 4,
+        strokes: [
+          {
+            type: 'GRADIENT_LINEAR' as const,
+            blendMode: 'NORMAL' as const,
+            gradientHandlePositions: [
+              { x: 0, y: 0.5 },
+              { x: 1, y: 0.5 },
+              { x: 0, y: 1 },
+            ],
+            gradientStops: [
+              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 0, a: 1 }, position: 1 },
+            ],
+          },
+        ],
+      });
+      expect(instance.cssBorderWidth()).toBe('4px');
+    });
   });
 });
