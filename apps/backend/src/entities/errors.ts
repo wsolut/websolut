@@ -22,8 +22,8 @@ export class TranslationMissingError extends BaseError {}
 
 export class PortAlreadyInUseError extends BaseError {}
 
-export class VercelCliUnavailableError extends BaseError {}
-
 export class VercelInvalidTokenError extends BaseError {}
 
 export class NetworkUnavailableError extends BaseError {}
+
+export class WordpressInvalidTokenError extends BaseError {}

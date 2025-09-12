@@ -20,7 +20,10 @@ import * as os from 'os';
 import axios from 'axios';
 import AdmZip from 'adm-zip';
 import { errorHasStack } from '../utils';
-import { InvalidArgumentError } from '../entities';
+import {
+  NetworkUnavailableError,
+  WordpressInvalidTokenError,
+} from '../entities';
 
 // Allowed file types for WordPress
 const ALLOWED_EXTENSIONS = [
@@ -115,7 +118,20 @@ export class ProjectsDeployToWordpressService extends BaseService {
   async deploy(id: number, input: ProjectDeployDto): Promise<ProjectEntity> {
     const project = await this.projectsService.fetchOne({ where: { id } });
 
-    const data = await this.validateOrFail(input);
+    const { data } = this.validateSchemaOrFail<ProjectDeployDto>(
+      z.object({
+        token: z
+          .string()
+          .trim()
+          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+        baseUrl: z
+          .string()
+          .trim()
+          .url({ message: this.langService.t('.VALIDATIONS.INVALID') })
+          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+      }),
+      input,
+    );
 
     const outDirPath = path.join(
       this.config.deployDirPath,
@@ -123,14 +139,12 @@ export class ProjectsDeployToWordpressService extends BaseService {
       'wordpress',
     );
 
-    // Export HTML + assets
-    await this.projectsExportStaticHtmlService.export(project, outDirPath);
-
     const jobStatus = await this.jobStatusesService.upsert(
       project.id,
       'projects',
       'deploy-to-wordpress',
     );
+
     await this.jobStatusesService.setAsStarted(jobStatus, {
       data: {
         token: data.token,
@@ -138,17 +152,23 @@ export class ProjectsDeployToWordpressService extends BaseService {
       },
     });
 
-    // Copy all allowed files to temp folder, preserving folder structure
-    const tempDir = copyToTempDir(outDirPath);
-
-    // Create ZIP
-    const zipPath = path.join(os.tmpdir(), `wp-landing-${Date.now()}.zip`);
-    await createZip(tempDir, zipPath);
-
-    const zipData = readFileSync(zipPath);
-    const zipBase64 = zipData.toString('base64');
-
     try {
+      // check preflight here in deply to throw error
+      await this.preflightCheck(data.baseUrl, data.token);
+
+      // Export HTML + assets
+      await this.projectsExportStaticHtmlService.export(project, outDirPath);
+
+      // Copy all allowed files to temp folder, preserving folder structure
+      const tempDir = copyToTempDir(outDirPath);
+
+      // Create ZIP
+      const zipPath = path.join(os.tmpdir(), `wp-landing-${Date.now()}.zip`);
+      await createZip(tempDir, zipPath);
+
+      const zipData = readFileSync(zipPath);
+      const zipBase64 = zipData.toString('base64');
+
       // Upload ZIP to WordPress
       const landingUrl = await this.updateLanding(
         data.baseUrl,
@@ -159,19 +179,54 @@ export class ProjectsDeployToWordpressService extends BaseService {
       await this.jobStatusesService.setAsFinished(jobStatus, {
         data: { url: landingUrl },
       });
-    } catch (error: unknown) {
-      const errorStackTrace = errorHasStack(error) ? error.stack : undefined;
+    } catch (error) {
+      if (error instanceof NetworkUnavailableError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 503,
+          errorMessage: 'Network unavailable. Please try again later.',
+        });
+      } else if (error instanceof WordpressInvalidTokenError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 403,
+          errorMessage: 'WordPress Token is invalid',
+        });
+      } else {
+        const errorStackTrace = errorHasStack(error) ? error.stack : undefined;
 
-      await this.jobStatusesService.setAsFinished(jobStatus, {
-        errorCode: 500,
-        errorMessage: 'Unexpected Error',
-        errorStackTrace,
-      });
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 500,
+          errorMessage: 'Unexpected Error',
+          errorStackTrace,
+        });
+      }
     }
-
     await this.projectsService.refreshJobStatuses(project);
 
     return project;
+  }
+
+  private async preflightCheck(
+    baseUrl: string,
+    token: string,
+  ): Promise<boolean> {
+    try {
+      const response = await axios.get(baseUrl + '/verify-token', {
+        params: { token },
+      });
+      return response.status === 200;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (
+          ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(error.code ?? '')
+        ) {
+          throw new NetworkUnavailableError();
+        }
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          throw new WordpressInvalidTokenError();
+        }
+      }
+      throw error;
+    }
   }
 
   private async updateLanding(
@@ -187,58 +242,6 @@ export class ProjectsDeployToWordpressService extends BaseService {
     );
 
     return response.data.landing_url;
-  }
-
-  private async validateOrFail(
-    data: ProjectDeployDto,
-  ): Promise<ProjectDeployDto> {
-    const result = this.validateSchema(
-      z.object({
-        token: z
-          .string()
-          .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
-        baseUrl: z
-          .string()
-          .trim()
-          .url({ message: this.langService.t('.VALIDATIONS.INVALID') })
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
-      }),
-      data,
-    );
-    const parsedData = result.data as ProjectDeployDto;
-
-    try {
-      // Verify token by making a test request
-      const baseUrl = parsedData.baseUrl.replace(/\/+$/, '');
-
-      await axios.get(baseUrl + '/verify-token', {
-        params: { token: parsedData.token },
-      });
-    } catch (error: unknown) {
-      const errorCode = axios.isAxiosError(error)
-        ? error.response?.status
-        : undefined;
-
-      if (errorCode === 404) {
-        result.errors['baseUrl'] ||= [];
-        result.errors['baseUrl'].push(
-          this.langService.t('.VALIDATIONS.NOT_WORKING'),
-        );
-      } else {
-        result.errors['token'] ||= [];
-        result.errors['token'].push(this.langService.t('.VALIDATIONS.INVALID'));
-      }
-    }
-
-    if (Object.keys(result.errors).length) {
-      throw new InvalidArgumentError(
-        this.langService.t('.ERRORS.INVALID_ARGUMENT'),
-        result.errors,
-      );
-    }
-
-    return parsedData;
   }
 }
 

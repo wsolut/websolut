@@ -55,6 +55,7 @@ export class ProjectsDeployToVercelService extends BaseService {
       'projects',
       'deploy-to-vercel',
     );
+
     await this.jobStatusesService.setAsStarted(jobStatus, {
       data: { token: data.token, name: data.projectName },
     });
