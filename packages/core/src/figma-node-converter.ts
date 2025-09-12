@@ -263,6 +263,7 @@ export class FigmaNodeConverter {
       alignContent: this.cssAlignContent(),
       alignItems: this.cssAlignItems(),
       alignSelf: this.cssAlignSelf(),
+      backgroundBlendMode: this.cssBackgroundBlendMode(),
       backgroundColor: this.cssBackgroundColor(),
       backgroundImage: this.cssBackgroundImage(),
       backgroundPosition: this.cssBackgroundPosition(),
@@ -514,6 +515,33 @@ export class FigmaNodeConverter {
 
       results.push(...gradientRules);
     }
+
+    return results.length > 0 ? results.join(', ') : undefined;
+  }
+
+  cssBackgroundBlendMode(): string | undefined {
+    // Emit one value per background layer in the same order as cssBackgroundImage():
+    // 1) all IMAGE fills; 2) GRADIENT_LINEAR fills that produce a CSS gradient.
+    const results: string[] = [];
+
+    const toCssBlend = (mode?: string): string => {
+      if (!mode) return 'normal';
+      if (mode === 'PASS_THROUGH' || mode === 'NORMAL') return 'normal';
+      return mode.toLowerCase().replace(/_/g, '-');
+    };
+
+    // Image layers
+    this.nodeFillsTypeImage.forEach((paint) => {
+      results.push(toCssBlend(paint.blendMode));
+    });
+
+    // Gradient layers that actually render
+    this.nodeFillsTypeGradientLinear.forEach((paint) => {
+      const gradientRule = figmaGradientPaintToCssLinearGradient(paint);
+      if (gradientRule) {
+        results.push(toCssBlend(paint.blendMode));
+      }
+    });
 
     return results.length > 0 ? results.join(', ') : undefined;
   }
