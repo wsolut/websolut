@@ -32,7 +32,6 @@ export class FigmaNodeConverter {
   nodeChildren: FigmaTypes.Node[] = [];
   nodeEffects!: FigmaTypes.Effect[];
   nodeEffectsTypeDropShadow: FigmaTypes.DropShadowEffect[];
-  nodeEffectsTypeInnerShadow: FigmaTypes.InnerShadowEffect[];
   nodeExportSettings!: FigmaTypes.ExportSetting[];
   nodeExportSettingsFormatSvg?: FigmaTypes.ExportSetting;
   nodeFills!: FigmaTypes.Paint[];
@@ -87,12 +86,6 @@ export class FigmaNodeConverter {
       figmaFilterVisibleEffects<FigmaTypes.DropShadowEffect>(
         this.nodeEffects,
         'DROP_SHADOW',
-      );
-
-    this.nodeEffectsTypeInnerShadow =
-      figmaFilterVisibleEffects<FigmaTypes.InnerShadowEffect>(
-        this.nodeEffects,
-        'INNER_SHADOW',
       );
 
     this.nodeExportSettings = this.nodeAsFrame.exportSettings || [];
@@ -273,6 +266,8 @@ export class FigmaNodeConverter {
       borderWidth: this.cssBorderWidth(),
       bottom: this.cssBottom(),
       boxShadow: this.cssBoxShadow(),
+      filter: this.cssFilter(),
+      WebkitFilter: this.cssFilter(),
       color: this.cssColor(),
       columnGap: this.cssColumnGap(),
       display: this.cssDisplay(),
@@ -297,6 +292,9 @@ export class FigmaNodeConverter {
       mixBlendMode: this.cssMixBlendMode(),
       opacity: this.cssOpacity(),
       overflow: this.cssOverflow(),
+      backdropFilter: this.cssBackdropFilter(),
+      WebkitBackdropFilter: this.cssBackdropFilter(),
+      backgroundClip: this.cssBackgroundClip(),
       paddingBottom: this.cssPaddingBottom(),
       paddingLeft: this.cssPaddingLeft(),
       paddingRight: this.cssPaddingRight(),
@@ -853,7 +851,13 @@ export class FigmaNodeConverter {
       );
     });
 
-    this.nodeEffectsTypeInnerShadow.forEach((innerShadowEffect) => {
+    const nodeEffectsTypeInnerShadow =
+      figmaFilterVisibleEffects<FigmaTypes.InnerShadowEffect>(
+        this.nodeEffects,
+        'INNER_SHADOW',
+      );
+
+    nodeEffectsTypeInnerShadow.forEach((innerShadowEffect) => {
       results.push(
         [
           this.numberToCssSize(roundFloat(innerShadowEffect.offset.x)),
@@ -867,6 +871,52 @@ export class FigmaNodeConverter {
     });
 
     return results.length > 0 ? results.join(', ') : undefined;
+  }
+
+  cssFilter(): string | undefined {
+    if (this.nodeType === 'TEXT') return undefined; // filters on text handled via text effects
+
+    const filters: string[] = [];
+
+    const nodeEffectsTypeLayerBlur =
+      figmaFilterVisibleEffects<FigmaTypes.BlurEffect>(
+        this.nodeEffects,
+        'LAYER_BLUR',
+      );
+
+    nodeEffectsTypeLayerBlur.forEach((eff) => {
+      const radius = roundFloat(eff.radius || 0);
+      if (radius > 0) filters.push(`blur(${this.numberToCssSize(radius)})`);
+    });
+
+    return filters.length > 0 ? filters.join(' ') : undefined;
+  }
+
+  cssBackdropFilter(): string | undefined {
+    const filters: string[] = [];
+
+    const nodeEffectsTypeBackgroundBlur =
+      figmaFilterVisibleEffects<FigmaTypes.BlurEffect>(
+        this.nodeEffects,
+        'BACKGROUND_BLUR',
+      );
+
+    nodeEffectsTypeBackgroundBlur.forEach((eff) => {
+      const radius = roundFloat(eff.radius || 0);
+
+      if (radius > 0) filters.push(`blur(${this.numberToCssSize(radius)})`);
+    });
+
+    return filters.length > 0 ? filters.join(' ') : undefined;
+  }
+
+  cssBackgroundClip(): string | undefined {
+    // If we apply backdrop-filter, clipping to padding-box usually matches Figma's inner/background blur bounds better.
+    if (this.cssBackdropFilter()) {
+      return 'padding-box';
+    }
+
+    return undefined;
   }
 
   cssTextShadow(): string | undefined {
