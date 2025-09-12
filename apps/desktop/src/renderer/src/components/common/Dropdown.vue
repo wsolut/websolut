@@ -1,12 +1,8 @@
 <template>
   <div class="flex flex-col">
-    <label
-      v-if="label"
-      :for="inputId"
-      class="text-neutral-400 font-light text-xs px-1.5 h-4 flex items-center"
-    >
+    <label v-if="label" :for="inputId" :class="props.labelClass">
       {{ label }}
-      <span v-if="required" class="text-alert ml-1">*</span>
+      <span v-if="required" class="text-red-500 ml-1" aria-label="required">*</span>
     </label>
 
     <div
@@ -102,6 +98,7 @@ const props = withDefaults(
     errorMessage?: string;
     modelValue?: string | null;
     options?: Option[];
+    labelClass?: string;
   }>(),
   {
     placeholder: '',
@@ -112,6 +109,7 @@ const props = withDefaults(
     errorMessage: '',
     modelValue: null,
     options: () => [],
+    labelClass: '',
   },
 );
 
