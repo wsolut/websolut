@@ -7,9 +7,7 @@ describe('NodeWrapper', () => {
     it('should output filter: blur(px) for single LAYER_BLUR', () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,
-        effects: [
-          { type: 'LAYER_BLUR', visible: true, radius: 12 },
-        ],
+        effects: [{ type: 'LAYER_BLUR', visible: true, radius: 12 }],
       });
       const style = instance.domxNodeStyle();
       expect(style.filter).toBe('blur(12px)');

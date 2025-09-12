@@ -260,7 +260,6 @@ export class FigmaNodeConverter {
       borderLeftWidth: this.cssBorderLeftWidth(),
       borderRadius: this.cssBorderRadius(),
       borderRightWidth: this.cssBorderRightWidth(),
-      borderSpacing: this.cssBorderSpacing(),
       borderStyle: this.cssBorderStyle(),
       borderTopWidth: this.cssBorderTopWidth(),
       borderWidth: this.cssBorderWidth(),
@@ -703,19 +702,19 @@ export class FigmaNodeConverter {
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
   }
 
-  borderSpacing(): number | undefined {
-    if (this.nodeAsFrame.cornerSmoothing) {
-      return this.nodeAsFrame.cornerSmoothing;
-    }
+  // borderSpacing(): number | undefined {
+  //   if (this.nodeAsFrame.cornerSmoothing) {
+  //     return this.nodeAsFrame.cornerSmoothing; // cornerSmoothing does not seem to be related to borderSpacing
+  //   }
 
-    return undefined;
-  }
+  //   return undefined;
+  // }
 
-  cssBorderSpacing(): string | undefined {
-    const result = this.borderSpacing();
+  // cssBorderSpacing(): string | undefined {
+  //   const result = this.borderSpacing();
 
-    return typeof result === 'number' ? this.numberToCssSize(result) : result;
-  }
+  //   return typeof result === 'number' ? this.numberToCssSize(result) : result;
+  // }
 
   cssBorderStyle(): string | undefined {
     if (!this.cssBorderColor()) return undefined;
