@@ -1,6 +1,6 @@
 import * as FigmaTypes from '@figma/rest-api-spec';
 
-export function figmaFindVisibleEffects<T = FigmaTypes.Effect>(
+export function figmaFilterVisibleEffects<T = FigmaTypes.Effect>(
   effects: FigmaTypes.Effect[],
   type: FigmaTypes.Effect['type'],
 ): T[] {
