@@ -366,7 +366,9 @@ export class FigmaNodeConverter {
       transform: this.cssTransform(),
       transformOrigin: this.cssTransformOrigin(),
       WebkitBackdropFilter: this.cssBackdropFilter(),
+      WebkitBackgroundClip: this.cssWebkitBackgroundClip(),
       WebkitFilter: this.cssFilter(),
+      WebkitTextFillColor: this.cssWebkitTextFillColor(),
       whiteSpace: this.cssWhiteSpace(),
       width: this.cssWidth(),
       writingMode: this.cssWritingMode(),
@@ -1088,11 +1090,18 @@ export class FigmaNodeConverter {
   }
 
   cssBackgroundClip(): string | undefined {
-    // If we apply backdrop-filter, clipping to padding-box usually matches Figma's inner/background blur bounds better.
-    if (this.cssBackdropFilter()) {
-      return 'padding-box';
-    }
+    // Gradient text takes precedence: clip background to glyphs
+    if (this.useGradientText()) return 'text';
 
+    // If we apply backdrop-filter, clipping to padding-box usually matches Figma's inner/background blur bounds better.
+    if (this.cssBackdropFilter()) return 'padding-box';
+
+    return undefined;
+  }
+
+  // Vendor-prefixed background-clip for better browser coverage on text gradients
+  cssWebkitBackgroundClip(): string | undefined {
+    if (this.useGradientText()) return 'text';
     return undefined;
   }
 
@@ -1116,10 +1125,62 @@ export class FigmaNodeConverter {
   cssColor(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
 
+    // When using gradient text, the text color should be transparent so the background gradient shows through the glyphs
+    if (this.useGradientText()) return 'transparent';
+
     const nodeLastFillTypeSolid =
       this.nodeFillsTypeSolid[this.nodeFillsTypeSolid.length - 1];
 
     return figmaPaintOrEffectCssRgba(nodeLastFillTypeSolid);
+  }
+
+  // Vendor-prefixed text fill color for Safari/WebKit
+  cssWebkitTextFillColor(): string | undefined {
+    if (this.nodeType !== 'TEXT') return undefined;
+    if (this.useGradientText()) return 'transparent';
+    return undefined;
+  }
+
+  // Determine if we should render text with a background gradient clipped to text
+  private useGradientText(): boolean {
+    if (this.nodeType !== 'TEXT') return false;
+
+    // Any renderable gradient fill (linear/radial/conic) qualifies
+    return this.hasRenderableGradientFill();
+  }
+
+  private hasRenderableGradientFill(): boolean {
+    // Linear
+    const hasLinear = (this.nodeFillsTypeGradientLinear || []).some((p) => {
+      const rule = figmaGradientPaintToCssLinearGradient(p);
+      return !!(rule && rule.length > 0);
+    });
+    if (hasLinear) return true;
+
+    // Radial
+    const nodeFillsTypeGradientRadial =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_RADIAL',
+      );
+    const hasRadial = nodeFillsTypeGradientRadial.some((p) => {
+      const rule = figmaGradientPaintToCssRadialGradient(p);
+      return !!(rule && rule.length > 0);
+    });
+    if (hasRadial) return true;
+
+    // Conic
+    const nodeFillsTypeGradientConic =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_ANGULAR',
+      );
+    const hasConic = nodeFillsTypeGradientConic.some((p) => {
+      const rule = figmaGradientPaintToCssConicGradient(p);
+      return !!(rule && rule.length > 0);
+    });
+
+    return hasConic;
   }
 
   cssColumnGap(): string | undefined {
