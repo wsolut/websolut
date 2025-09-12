@@ -6,7 +6,8 @@ import {
   roundFloat,
   sanitizedId,
   figmaGradientPaintToCssRgba,
-  figmaFindVisibleEffects,
+  figmaFilterVisibleEffects,
+  figmaFilterVisiblePaints,
 } from './utils';
 import * as FigmaTypes from '@figma/rest-api-spec';
 import {
@@ -36,9 +37,11 @@ export class FigmaNodeConverter {
   nodeExportSettings!: FigmaTypes.ExportSetting[];
   nodeExportSettingsFormatSvg?: FigmaTypes.ExportSetting;
   nodeFills!: FigmaTypes.Paint[];
-  nodeFillsTypeGradientLinear: FigmaTypes.GradientPaint | undefined;
-  nodeFillsTypeImage: FigmaTypes.ImagePaint | undefined;
-  nodeFillsTypeSolid: FigmaTypes.SolidPaint | undefined;
+  nodeFillsTypeSolid!: FigmaTypes.SolidPaint[];
+  nodeFillsTypeGradientLinear!: FigmaTypes.GradientPaint[];
+  nodeFillTypeGradientLinear: FigmaTypes.GradientPaint | undefined;
+  nodeFillTypeImage: FigmaTypes.ImagePaint | undefined;
+  nodeLastFillTypeSolid: FigmaTypes.SolidPaint | undefined;
   nodeImageRef: string | undefined;
   nodeStrokes!: FigmaTypes.Paint[];
   nodeStrokesTypeSolid: FigmaTypes.SolidPaint | undefined;
@@ -86,13 +89,13 @@ export class FigmaNodeConverter {
     this.nodeEffects = this.nodeAsFrame.effects || [];
 
     this.nodeEffectsTypeDropShadow =
-      figmaFindVisibleEffects<FigmaTypes.DropShadowEffect>(
+      figmaFilterVisibleEffects<FigmaTypes.DropShadowEffect>(
         this.nodeEffects,
         'DROP_SHADOW',
       );
 
     this.nodeEffectsTypeInnerShadow =
-      figmaFindVisibleEffects<FigmaTypes.InnerShadowEffect>(
+      figmaFilterVisibleEffects<FigmaTypes.InnerShadowEffect>(
         this.nodeEffects,
         'INNER_SHADOW',
       );
@@ -105,17 +108,24 @@ export class FigmaNodeConverter {
 
     this.nodeFills = this.nodeAsFrame.fills || [];
 
-    this.nodeFillsTypeSolid = figmaFindVisiblePaint<FigmaTypes.SolidPaint>(
+    this.nodeFillsTypeSolid = figmaFilterVisiblePaints<FigmaTypes.SolidPaint>(
       this.nodeFills,
       'SOLID',
     );
+    this.nodeLastFillTypeSolid =
+      this.nodeFillsTypeSolid[this.nodeFillsTypeSolid.length - 1];
 
-    this.nodeFillsTypeImage = figmaFindVisiblePaint<FigmaTypes.ImagePaint>(
+    this.nodeFillTypeImage = figmaFindVisiblePaint<FigmaTypes.ImagePaint>(
       this.nodeFills,
       'IMAGE',
     );
 
     this.nodeFillsTypeGradientLinear =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeFills,
+        'GRADIENT_LINEAR',
+      );
+    this.nodeFillTypeGradientLinear =
       figmaFindVisiblePaint<FigmaTypes.GradientPaint>(
         this.nodeFills,
         'GRADIENT_LINEAR',
@@ -134,7 +144,7 @@ export class FigmaNodeConverter {
 
     this.id = sanitizedId(this.node.id);
 
-    this.nodeImageRef = this.nodeFillsTypeImage?.imageRef;
+    this.nodeImageRef = this.nodeFillTypeImage?.imageRef;
 
     this.domxAttributesFromFigmaNodeName = {
       id: this.id,
@@ -478,12 +488,18 @@ export class FigmaNodeConverter {
   cssBackgroundColor(): string | undefined {
     if (this.nodeType === 'TEXT') return undefined;
 
-    let backgroundColor = figmaPaintOrEffectCssRgba(this.nodeFillsTypeSolid);
+    let backgroundColor = figmaPaintOrEffectCssRgba(this.nodeLastFillTypeSolid);
 
-    if (!backgroundColor && this.nodeFillsTypeGradientLinear) {
-      backgroundColor = figmaGradientPaintToCssRgba(
-        this.nodeFillsTypeGradientLinear,
-      );
+    if (!backgroundColor && this.nodeFillsTypeGradientLinear.length > 0) {
+      for (let i = this.nodeFillsTypeGradientLinear.length - 1; i >= 0; i--) {
+        const bgColor = figmaGradientPaintToCssRgba(
+          this.nodeFillsTypeGradientLinear[i],
+        );
+        if (bgColor) {
+          backgroundColor = bgColor;
+          break;
+        }
+      }
     }
 
     return backgroundColor;
@@ -498,9 +514,9 @@ export class FigmaNodeConverter {
       );
     }
 
-    if (this.nodeFillsTypeGradientLinear) {
+    if (this.nodeFillTypeGradientLinear) {
       const linearGradientRule = figmaGradientPaintToCssLinearGradient(
-        this.nodeFillsTypeGradientLinear,
+        this.nodeFillTypeGradientLinear,
       );
 
       if (linearGradientRule) results.push(linearGradientRule);
@@ -510,7 +526,7 @@ export class FigmaNodeConverter {
   }
 
   cssBackgroundPosition(): string | undefined {
-    const scaleMode = this.nodeFillsTypeImage?.scaleMode || '';
+    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
 
     if (scaleMode === 'FILL') return 'center';
     if (scaleMode === 'FIT') return 'center';
@@ -520,7 +536,7 @@ export class FigmaNodeConverter {
   }
 
   cssBackgroundRepeat(): string | undefined {
-    const scaleMode = this.nodeFillsTypeImage?.scaleMode || '';
+    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
 
     if (scaleMode === 'FILL') return 'no-repeat';
     if (scaleMode === 'FIT') return 'no-repeat';
@@ -530,7 +546,7 @@ export class FigmaNodeConverter {
   }
 
   cssBackgroundSize(): string | undefined {
-    const scaleMode = this.nodeFillsTypeImage?.scaleMode || '';
+    const scaleMode = this.nodeFillTypeImage?.scaleMode || '';
 
     if (scaleMode === 'FILL') return 'cover';
     if (scaleMode === 'FIT') return 'contain';
@@ -805,7 +821,7 @@ export class FigmaNodeConverter {
   cssColor(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
 
-    return figmaPaintOrEffectCssRgba(this.nodeFillsTypeSolid);
+    return figmaPaintOrEffectCssRgba(this.nodeLastFillTypeSolid);
   }
 
   cssColumnGap(): string | undefined {

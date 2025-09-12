@@ -98,6 +98,85 @@ describe('NodeWrapper', () => {
     });
   });
 
+  describe('when fills has multiple entries', () => {
+    it('uses the last visible SOLID color', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        fills: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 }, // red
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 1, b: 0, a: 0.5 }, // green 50%
+          },
+        ],
+      });
+      expect(instance.cssBackgroundColor()).toBe('rgba(0, 255, 0, 0.5)');
+    });
+
+    it('skips invisible paints when choosing color', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        fills: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 }, // red
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            visible: false,
+            color: { r: 0, g: 1, b: 0, a: 1 }, // green (invisible)
+          },
+        ],
+      });
+      expect(instance.cssBackgroundColor()).toBe('rgba(255, 0, 0, 1)');
+    });
+
+    it('ignores multi-stop gradients for backgroundColor (no solid fallback) and selects prior solid', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        fills: [
+          {
+            blendMode: 'NORMAL',
+            type: 'GRADIENT_LINEAR',
+            opacity: 0.5,
+            gradientHandlePositions: [
+              { x: 0.0, y: 0.5 },
+              { x: 1.0, y: 0.5 },
+              { x: 0.0, y: 1.0 },
+            ],
+            gradientStops: [
+              {
+                color: { r: 1, g: 0, b: 0, a: 0.5 }, // red 50%
+                position: 0,
+              },
+            ],
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'GRADIENT_LINEAR',
+            gradientHandlePositions: [
+              { x: 0.0, y: 0.5 },
+              { x: 1.0, y: 0.5 },
+              { x: 0.0, y: 1.0 },
+            ],
+            gradientStops: [
+              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+              { color: { r: 0, g: 1, b: 0, a: 1 }, position: 1 },
+            ],
+          },
+        ],
+      });
+      expect(instance.cssBackgroundColor()).toBe('rgba(255, 0, 0, 0.25)');
+    });
+  });
+
   describe('when data has a SOLID fills entry and no background entry', () => {
     it('#background_color have the SOLID fills color', () => {
       const instance = FigmaNodeConverter.create({
