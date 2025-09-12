@@ -43,4 +43,34 @@ describe('FigmaNodeConverter cssPlaceContent', () => {
     } as FigmaTypes.FrameNode);
     expect(inst.cssPlaceContent()).toBeUndefined();
   });
+
+  it("maps counterAxisAlignContent 'MIN' to align part 'start'", () => {
+    const inst = FigmaNodeConverter.create({
+      ...FigmaExamples.frame,
+      layoutMode: 'GRID',
+      counterAxisAlignContent:
+        'MIN' as unknown as FigmaTypes.FrameNode['counterAxisAlignContent'],
+    } as FigmaTypes.FrameNode);
+    expect(inst.cssPlaceContent()).toBe('start normal');
+  });
+
+  it("maps counterAxisAlignContent 'MAX' to align part 'end'", () => {
+    const inst = FigmaNodeConverter.create({
+      ...FigmaExamples.frame,
+      layoutMode: 'GRID',
+      counterAxisAlignContent:
+        'MAX' as unknown as FigmaTypes.FrameNode['counterAxisAlignContent'],
+    } as FigmaTypes.FrameNode);
+    expect(inst.cssPlaceContent()).toBe('end normal');
+  });
+
+  it("maps counterAxisAlignContent 'CENTER' to align part 'center'", () => {
+    const inst = FigmaNodeConverter.create({
+      ...FigmaExamples.frame,
+      layoutMode: 'GRID',
+      counterAxisAlignContent:
+        'CENTER' as unknown as FigmaTypes.FrameNode['counterAxisAlignContent'],
+    } as FigmaTypes.FrameNode);
+    expect(inst.cssPlaceContent()).toBe('center normal');
+  });
 });

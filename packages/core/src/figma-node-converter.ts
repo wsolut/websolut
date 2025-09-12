@@ -504,6 +504,18 @@ export class FigmaNodeConverter {
       return 'space-between';
     }
 
+    if (this.nodeAsFrame.counterAxisAlignContent === 'MIN') {
+      return 'flex-start';
+    }
+
+    if (this.nodeAsFrame.counterAxisAlignContent === 'MAX') {
+      return 'flex-end';
+    }
+
+    if (this.nodeAsFrame.counterAxisAlignContent === 'CENTER') {
+      return 'center';
+    }
+
     return undefined;
   }
 
@@ -1381,10 +1393,27 @@ export class FigmaNodeConverter {
 
     // Align-content (block/cross axis for grid)
     let alignPart: string | undefined;
-    if (this.nodeAsFrame.counterAxisAlignContent === 'AUTO')
-      alignPart = 'normal';
-    if (this.nodeAsFrame.counterAxisAlignContent === 'SPACE_BETWEEN')
-      alignPart = 'space-between';
+    const alignContentVal =
+      (this.nodeAsFrame.counterAxisAlignContent as unknown as string) || '';
+    switch (alignContentVal) {
+      case 'AUTO':
+        alignPart = 'normal';
+        break;
+      case 'SPACE_BETWEEN':
+        alignPart = 'space-between';
+        break;
+      case 'MIN':
+        alignPart = 'start';
+        break;
+      case 'MAX':
+        alignPart = 'end';
+        break;
+      case 'CENTER':
+        alignPart = 'center';
+        break;
+      default:
+        break;
+    }
 
     // Justify-content (inline/main axis for grid) mapped from primaryAxisAlignItems
     let justifyPart: string | undefined;
