@@ -339,6 +339,7 @@ export class FigmaNodeConverter {
       placeContent: this.cssPlaceContent(),
       placeItems: this.cssPlaceItems(),
       position: this.cssPosition(),
+      zIndex: this.cssZIndex(),
       right: this.cssRight(),
       rowGap: this.cssRowGap(),
       textAlign: this.cssTextAlign(),
@@ -1840,6 +1841,15 @@ export class FigmaNodeConverter {
     const result = this.right();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
+  }
+
+  cssZIndex(): string | undefined {
+    if (!this.hoveringPosition) return undefined;
+
+    const siblings = this.parent?.children || [];
+    const idx = siblings.findIndex((c) => c === this);
+    const z = idx >= 0 ? idx + 1 : 1; // 1-based to avoid 0 edge cases
+    return z.toString();
   }
 
   cssRowGap(): string | undefined {
