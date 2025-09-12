@@ -37,5 +37,59 @@ describe('NodeWrapper', () => {
       });
       expect(instance.cssBorderColor()).toBe(undefined);
     });
+
+    it('should be blank when the top-most visible stroke is non-SOLID even if a SOLID exists below', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 },
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'GRADIENT_LINEAR',
+            gradientHandlePositions: [
+              { x: 0.0, y: 0.5 },
+              { x: 1.0, y: 0.5 },
+              { x: 0.0, y: 1.0 },
+            ],
+            gradientStops: [
+              { position: 0, color: { r: 0, g: 0, b: 0, a: 1 } },
+              { position: 1, color: { r: 1, g: 1, b: 1, a: 1 } },
+            ],
+          },
+        ],
+      });
+      expect(instance.cssBorderColor()).toBe(undefined);
+    });
+
+    it('should return color when the top-most visible stroke is SOLID', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        strokes: [
+          {
+            blendMode: 'NORMAL',
+            type: 'GRADIENT_LINEAR',
+            gradientHandlePositions: [
+              { x: 0.0, y: 0.5 },
+              { x: 1.0, y: 0.5 },
+              { x: 0.0, y: 1.0 },
+            ],
+            gradientStops: [
+              { position: 0, color: { r: 0, g: 0, b: 0, a: 1 } },
+              { position: 1, color: { r: 1, g: 1, b: 1, a: 1 } },
+            ],
+          },
+          {
+            blendMode: 'NORMAL',
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 1, a: 1 },
+          },
+        ],
+      });
+      expect(instance.cssBorderColor()).toBe('rgba(0, 0, 255, 1)');
+    });
   });
 });

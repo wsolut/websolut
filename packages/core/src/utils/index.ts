@@ -5,8 +5,6 @@ export * from './delete-empty-dir-sync';
 export * from './figma-client';
 export * from './figma-filter-visible-effects';
 export * from './figma-filter-visible-paints';
-export * from './figma-find-visible-effect';
-export * from './figma-find-visible-paint';
 export * from './figma-gradient-paint-to-css-linear-gradient';
 export * from './figma-gradient-paint-to-css-rgba';
 export * from './figma-gradient-to-angle';

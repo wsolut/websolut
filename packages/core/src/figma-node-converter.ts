@@ -1,7 +1,6 @@
 import * as csstype from 'csstype';
 import {
   figmaGradientPaintToCssLinearGradient,
-  figmaFindVisiblePaint,
   figmaPaintOrEffectCssRgba,
   roundFloat,
   sanitizedId,
@@ -41,7 +40,6 @@ export class FigmaNodeConverter {
   nodeFillsTypeImage!: FigmaTypes.ImagePaint[];
   nodeFillsTypeSolid!: FigmaTypes.SolidPaint[];
   nodeStrokes!: FigmaTypes.Paint[];
-  nodeStrokesTypeSolid: FigmaTypes.SolidPaint | undefined;
   nodeStyle!: FigmaTypes.TypeStyle;
   nodeType!: string;
 
@@ -122,11 +120,6 @@ export class FigmaNodeConverter {
       );
 
     this.nodeStrokes = this.nodeAsFrame.strokes || [];
-
-    this.nodeStrokesTypeSolid = figmaFindVisiblePaint<FigmaTypes.SolidPaint>(
-      this.nodeStrokes,
-      'SOLID',
-    );
 
     this.nodeStyle = this.nodeAsText.style || ({} as FigmaTypes.TypeStyle);
 
@@ -592,7 +585,7 @@ export class FigmaNodeConverter {
   }
 
   borderBottomWidth(): number | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
     const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
@@ -616,11 +609,23 @@ export class FigmaNodeConverter {
   }
 
   cssBorderColor(): string | undefined {
-    return figmaPaintOrEffectCssRgba(this.nodeStrokesTypeSolid);
+    // Choose the top-most visible stroke paint. If it's SOLID, map to rgba. Otherwise, borders aren't representable.
+    const visibleStrokes = (this.nodeStrokes || []).filter((p) => {
+      const visible = (p as { visible?: boolean }).visible;
+      return visible !== false;
+    });
+
+    if (visibleStrokes.length === 0) return undefined;
+
+    const topMost = visibleStrokes[visibleStrokes.length - 1];
+
+    if (topMost.type !== 'SOLID') return undefined;
+
+    return figmaPaintOrEffectCssRgba(topMost);
   }
 
   borderLeftWidth(): number | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
     const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
@@ -673,7 +678,7 @@ export class FigmaNodeConverter {
   }
 
   borderRightWidth(): number | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
     const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
@@ -711,9 +716,36 @@ export class FigmaNodeConverter {
   }
 
   cssBorderStyle(): string | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
-    if (this.nodeAsFrame.strokeDashes) {
+    if (this.nodeAsFrame.strokeDashes && this.nodeAsFrame.strokeDashes.length) {
+      const pattern = this.nodeAsFrame.strokeDashes;
+      const weight = this.nodeAsFrame.strokeWeight ?? undefined;
+      const nearZero = (n: number) => Math.abs(n) <= 0.1; // treat ~0 as 0
+
+      // Heuristic 1: any dash ~ 0 with a positive gap -> dotted
+      let hasNearZeroDash = false;
+      let hasPositiveGap = false;
+      pattern.forEach((val, idx) => {
+        if (idx % 2 === 0) {
+          // dash lengths (even indices)
+          if (nearZero(val)) hasNearZeroDash = true;
+        } else {
+          // gaps (odd indices)
+          if (val > 0.1) hasPositiveGap = true;
+        }
+      });
+      if (hasNearZeroDash && hasPositiveGap) return 'dotted';
+
+      // Heuristic 2: all segments are very short -> dotted
+      if (pattern.length > 0) {
+        const threshold =
+          weight !== undefined ? Math.max(0.5, weight * 0.5) : 1; // px
+        const allShort = pattern.every((n) => n <= threshold);
+        if (allShort) return 'dotted';
+      }
+
+      // Otherwise, we can only express generic dashed in CSS
       return 'dashed';
     }
 
@@ -723,7 +755,7 @@ export class FigmaNodeConverter {
   }
 
   borderTopWidth(): number | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
     const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
@@ -747,7 +779,7 @@ export class FigmaNodeConverter {
   }
 
   borderWidth(): number | undefined {
-    if (!this.nodeStrokesTypeSolid) return undefined;
+    if (!this.cssBorderColor()) return undefined;
 
     const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
