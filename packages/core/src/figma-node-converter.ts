@@ -1,12 +1,12 @@
 import * as csstype from 'csstype';
 import {
   figmaGradientPaintToCssLinearGradient,
-  figmaFindVisibleEffect,
   figmaFindVisiblePaint,
   figmaPaintOrEffectCssRgba,
   roundFloat,
   sanitizedId,
   figmaGradientPaintToCssRgba,
+  figmaFindVisibleEffects,
 } from './utils';
 import * as FigmaTypes from '@figma/rest-api-spec';
 import {
@@ -31,8 +31,8 @@ export class FigmaNodeConverter {
   nodeAsText!: FigmaTypes.TextNode;
   nodeChildren: FigmaTypes.Node[] = [];
   nodeEffects!: FigmaTypes.Effect[];
-  nodeEffectsTypeDropShadow: FigmaTypes.DropShadowEffect | undefined;
-  nodeEffectsTypeInnerShadow: FigmaTypes.InnerShadowEffect | undefined;
+  nodeEffectsTypeDropShadow: FigmaTypes.DropShadowEffect[];
+  nodeEffectsTypeInnerShadow: FigmaTypes.InnerShadowEffect[];
   nodeExportSettings!: FigmaTypes.ExportSetting[];
   nodeExportSettingsFormatSvg?: FigmaTypes.ExportSetting;
   nodeFills!: FigmaTypes.Paint[];
@@ -86,13 +86,13 @@ export class FigmaNodeConverter {
     this.nodeEffects = this.nodeAsFrame.effects || [];
 
     this.nodeEffectsTypeDropShadow =
-      figmaFindVisibleEffect<FigmaTypes.DropShadowEffect>(
+      figmaFindVisibleEffects<FigmaTypes.DropShadowEffect>(
         this.nodeEffects,
         'DROP_SHADOW',
       );
 
     this.nodeEffectsTypeInnerShadow =
-      figmaFindVisibleEffect<FigmaTypes.InnerShadowEffect>(
+      figmaFindVisibleEffects<FigmaTypes.InnerShadowEffect>(
         this.nodeEffects,
         'INNER_SHADOW',
       );
@@ -753,46 +753,30 @@ export class FigmaNodeConverter {
   cssBoxShadow(): string | undefined {
     const results: string[] = [];
 
-    if (this.nodeEffectsTypeDropShadow) {
+    this.nodeEffectsTypeDropShadow.forEach((dropShadowEffect) => {
       results.push(
         [
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeDropShadow.offset.x),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeDropShadow.offset.y),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeDropShadow.radius),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeDropShadow.spread || 0),
-          ),
-          figmaPaintOrEffectCssRgba(this.nodeEffectsTypeDropShadow),
+          this.numberToCssSize(roundFloat(dropShadowEffect.offset.x)),
+          this.numberToCssSize(roundFloat(dropShadowEffect.offset.y)),
+          this.numberToCssSize(roundFloat(dropShadowEffect.radius)),
+          this.numberToCssSize(roundFloat(dropShadowEffect.spread || 0)),
+          figmaPaintOrEffectCssRgba(dropShadowEffect),
         ].join(' '),
       );
-    }
+    });
 
-    if (this.nodeEffectsTypeInnerShadow) {
+    this.nodeEffectsTypeInnerShadow.forEach((innerShadowEffect) => {
       results.push(
         [
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeInnerShadow.offset.x),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeInnerShadow.offset.y),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeInnerShadow.radius),
-          ),
-          this.numberToCssSize(
-            roundFloat(this.nodeEffectsTypeInnerShadow.spread || 0),
-          ),
-          figmaPaintOrEffectCssRgba(this.nodeEffectsTypeInnerShadow),
+          this.numberToCssSize(roundFloat(innerShadowEffect.offset.x)),
+          this.numberToCssSize(roundFloat(innerShadowEffect.offset.y)),
+          this.numberToCssSize(roundFloat(innerShadowEffect.radius)),
+          this.numberToCssSize(roundFloat(innerShadowEffect.spread || 0)),
+          figmaPaintOrEffectCssRgba(innerShadowEffect),
           'inset',
         ].join(' '),
       );
-    }
+    });
 
     return results.length > 0 ? results.join(', ') : undefined;
   }
