@@ -514,12 +514,13 @@ export class FigmaNodeConverter {
       );
     }
 
-    if (this.nodeFillTypeGradientLinear) {
-      const linearGradientRule = figmaGradientPaintToCssLinearGradient(
-        this.nodeFillTypeGradientLinear,
-      );
+    if (this.nodeFillsTypeGradientLinear?.length) {
+      const gradientRules = this.nodeFillsTypeGradientLinear
+        .map((paint) => figmaGradientPaintToCssLinearGradient(paint))
+        .filter((rule): rule is string => Boolean(rule));
 
-      if (linearGradientRule) results.push(linearGradientRule);
+      // Keep existing stacking behavior by appending gradients after image url (if any)
+      results.push(...gradientRules);
     }
 
     return results.length > 0 ? results.join(', ') : undefined;
