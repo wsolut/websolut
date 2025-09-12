@@ -514,7 +514,7 @@ export class FigmaNodeConverter {
 
     if (scaleMode === 'FILL') return 'center';
     if (scaleMode === 'FIT') return 'center';
-    if (scaleMode === 'TILE') return 'repeat';
+    if (scaleMode === 'TILE') return '0 0';
 
     return undefined;
   }
