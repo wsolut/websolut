@@ -1,12 +1,8 @@
 <template>
   <div class="relative flex flex-col" :class="customClass">
-    <label
-      v-if="label"
-      :for="inputId"
-      class="text-neutral-400 font-light text-xs leading-tight tracking-wide px-1.5 h-4 min-h-4 flex items-center mb-1"
-    >
+    <label v-if="label" :for="inputId" :class="props.labelClass">
       {{ label }}
-      <span v-if="required" class="text-alert ml-1" aria-label="required">*</span>
+      <span v-if="required" class="text-red-500 ml-1" aria-label="required">*</span>
     </label>
 
     <div class="relative">
@@ -119,6 +115,7 @@ const props = withDefaults(
     errors?: string[];
     errorMessage?: string;
     actionButtonIcon?: string;
+    labelClass?: string;
   }>(),
   {
     id: '',
@@ -136,6 +133,7 @@ const props = withDefaults(
     hint: '',
     customClass: 'w-72',
     errorMessage: '',
+    labelClass: '',
   },
 );
 

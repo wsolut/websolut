@@ -83,17 +83,21 @@ function handleSubmitClick() {
       <div class="flex flex-col gap-4">
         <Input
           v-model="baseUrl"
-          label="Base URL"
           placeholder="Enter Base URL"
-          class="w-full"
+          label="Base URL"
+          label-class="text-sm font-light"
+          required
+          class="w-full text-sm placeholder:text-gray-500"
           :errors="deploymentRequest.errors.baseUrl"
         />
 
         <Input
           v-model="token"
-          label="WordPress Access Token"
           placeholder="Enter access token"
-          class="w-full"
+          label="WordPress Access Token"
+          label-class="text-sm font-light"
+          required
+          class="w-full text-sm placeholder:text-gray-500"
           :errors="deploymentRequest.errors.token"
         />
       </div>

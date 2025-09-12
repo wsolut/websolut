@@ -1,13 +1,9 @@
 <template>
   <div class="relative flex flex-col" :class="customClass">
     <!-- Label -->
-    <label
-      v-if="label"
-      :for="inputId"
-      class="text-neutral-400 font-light text-xs leading-tight tracking-wide px-1.5 h-4 min-h-4 flex items-center mb-1"
-    >
+    <label v-if="label" :for="inputId" :class="props.labelClass">
       {{ label }}
-      <span v-if="required" class="text-alert ml-1" aria-label="required">*</span>
+      <span v-if="required" class="text-red-500 ml-1" aria-label="required">*</span>
     </label>
 
     <!-- Textarea container -->
@@ -106,6 +102,7 @@ const props = withDefaults(
     resizeable?: boolean;
     errors?: string[];
     errorMessage?: string;
+    labelClass?: string;
   }>(),
   {
     id: '',
@@ -122,6 +119,7 @@ const props = withDefaults(
     rows: 4,
     resizeable: true,
     errorMessage: '',
+    labelClass: '',
   },
 );
 

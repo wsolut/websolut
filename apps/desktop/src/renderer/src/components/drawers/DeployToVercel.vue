@@ -81,17 +81,21 @@ function handleSubmitClick() {
       <div class="flex flex-col gap-4">
         <Input
           v-model="projectName"
-          label="Project Name"
           placeholder="Enter Project name"
-          class="w-full"
+          label="Project Name"
+          label-class="text-sm font-light"
+          required
+          class="w-full text-sm placeholder:text-gray-500"
           :errors="deploymentRequest.errors.projectName"
         />
 
         <Input
           v-model="token"
-          label="Vercel Access Token"
           placeholder="Enter access token"
-          class="w-full"
+          label="Vercel Access Token"
+          label-class="text-sm font-light"
+          required
+          class="w-full text-sm placeholder:text-gray-500"
           :errors="deploymentRequest.errors.token"
         />
       </div>
