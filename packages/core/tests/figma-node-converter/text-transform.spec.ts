@@ -3,7 +3,7 @@ import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 
 describe('NodeWrapper', () => {
-  describe('css_properties.text_transform', () => {
+  describe('#cssTextTransform', () => {
     describe("when 'style.textCase' is 'UPPER'", () => {
       it("#text_transform should be 'uppercase'", () => {
         const instance = FigmaNodeConverter.create({
@@ -13,6 +13,7 @@ describe('NodeWrapper', () => {
         expect(instance.cssTextTransform()).toBe('uppercase');
       });
     });
+
     describe("when 'style.textCase' is 'LOWER'", () => {
       it("#text_transform should be 'lowercase'", () => {
         const instance = FigmaNodeConverter.create({
@@ -32,21 +33,21 @@ describe('NodeWrapper', () => {
       });
     });
     describe("when 'style.textCase' is 'SMALL_CAPS'", () => {
-      it("#text_transform should be 'lowercase'", () => {
+      it('#text_transform should be undefined (handled by font-variant-caps)', () => {
         const instance = FigmaNodeConverter.create({
           ...FigmaExamples.text,
           style: { textCase: 'SMALL_CAPS' },
         });
-        expect(instance.cssTextTransform()).toBe('lowercase');
+        expect(instance.cssTextTransform()).toBeUndefined();
       });
     });
     describe("when 'style.textCase' is 'SMALL_CAPS_FORCED'", () => {
-      it("#text_transform should be 'lowercase'", () => {
+      it('#text_transform should be undefined (handled by font-variant-caps)', () => {
         const instance = FigmaNodeConverter.create({
           ...FigmaExamples.text,
           style: { textCase: 'SMALL_CAPS_FORCED' },
         });
-        expect(instance.cssTextTransform()).toBe('lowercase');
+        expect(instance.cssTextTransform()).toBeUndefined();
       });
     });
   });
