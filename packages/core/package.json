@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "dev": "node --env-file=.env examples/static-html/synchronize.mjs",
+    "dev": "tsx --env-file=.env scripts/dev.ts",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",

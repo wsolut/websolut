@@ -1251,9 +1251,10 @@ export class FigmaNodeConverter {
       return 'auto';
     }
 
-    if (this.nodeAsFrame.scrollBehavior === 'SCROLLS') {
-      return 'auto';
-    }
+    // For some reason scrollBehavior is always 'SCROLLS' on frames that are not scrollable
+    // if (this.nodeAsFrame.scrollBehavior === 'SCROLLS') {
+    //   return 'auto';
+    // }
 
     return undefined;
   }
