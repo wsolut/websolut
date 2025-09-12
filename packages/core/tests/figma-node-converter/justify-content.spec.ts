@@ -4,6 +4,15 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 
 describe('NodeWrapper', () => {
   describe('#justifyContent', () => {
+    it('returns undefined when layoutMode is GRID (use place-content)', () => {
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.frame,
+        layoutMode: 'GRID',
+        primaryAxisAlignItems: 'CENTER',
+      });
+      expect(instance.cssJustifyContent()).toBeUndefined();
+    });
+
     it("should be 'flex-start' when 'primaryAxisAlignItems' is 'MIN'", () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,
