@@ -1,9 +1,31 @@
 import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
+import * as FigmaTypes from '@figma/rest-api-spec';
 
 describe('NodeWrapper', () => {
   describe('#cssBackgroundImage', () => {
+    it('emits gradient for TEXT nodes with gradient fills', () => {
+      const gradient: FigmaTypes.GradientPaint = {
+        opacity: 1,
+        blendMode: 'NORMAL',
+        type: 'GRADIENT_LINEAR',
+        gradientHandlePositions: [
+          { x: 0.0, y: 0.5 },
+          { x: 1.0, y: 0.5 },
+          { x: 0.0, y: 1.0 },
+        ],
+        gradientStops: [
+          { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+          { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 },
+        ],
+      };
+      const instance = FigmaNodeConverter.create({
+        ...FigmaExamples.text,
+        fills: [gradient],
+      });
+      expect(instance.cssBackgroundImage()).toContain('linear-gradient');
+    });
     it('should be undefined when GRADIENT_LINEAR entry only has one stop', () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,
