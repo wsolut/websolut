@@ -46,6 +46,7 @@ export class FigmaNodeConverter {
   uniformStrokeWeight: number | undefined = undefined;
   topMostSolidStroke: FigmaTypes.SolidPaint | undefined = undefined;
   topMostSolidStrokeColor: string | undefined = undefined;
+  lastLinearGradientStroke: FigmaTypes.GradientPaint | undefined = undefined;
 
   domNameFromFigmaNodeName: string | undefined;
   domxAttributesFromFigmaNodeName!: DomxNodeAttributes;
@@ -128,6 +129,7 @@ export class FigmaNodeConverter {
       const visible = (p as { visible?: boolean }).visible;
       return visible !== false;
     });
+
     if (visibleStrokes.length > 0) {
       const topMost = visibleStrokes[visibleStrokes.length - 1];
 
@@ -151,6 +153,18 @@ export class FigmaNodeConverter {
       }
     } else if (this.nodeAsFrame.strokeWeight !== undefined) {
       this.uniformStrokeWeight = this.nodeAsFrame.strokeWeight;
+    }
+
+    // --- Gradient stroke via border-image (CENTER alignment only) ---
+    const nodeStrokesTypeGradientLinear =
+      figmaFilterVisiblePaints<FigmaTypes.GradientPaint>(
+        this.nodeStrokes,
+        'GRADIENT_LINEAR',
+      );
+
+    if (nodeStrokesTypeGradientLinear.length > 0) {
+      this.lastLinearGradientStroke =
+        nodeStrokesTypeGradientLinear[nodeStrokesTypeGradientLinear.length - 1];
     }
 
     this.id = sanitizedId(this.node.id);
@@ -294,6 +308,9 @@ export class FigmaNodeConverter {
       backgroundSize: this.cssBackgroundSize(),
       borderBottomWidth: this.cssBorderBottomWidth(),
       borderColor: this.cssBorderColor(),
+      borderImageRepeat: this.cssBorderImageRepeat(),
+      borderImageSlice: this.cssBorderImageSlice(),
+      borderImageSource: this.cssBorderImageSource(),
       borderLeftWidth: this.cssBorderLeftWidth(),
       borderRadius: this.cssBorderRadius(),
       borderRightWidth: this.cssBorderRightWidth(),
@@ -339,7 +356,6 @@ export class FigmaNodeConverter {
       placeContent: this.cssPlaceContent(),
       placeItems: this.cssPlaceItems(),
       position: this.cssPosition(),
-      zIndex: this.cssZIndex(),
       right: this.cssRight(),
       rowGap: this.cssRowGap(),
       textAlign: this.cssTextAlign(),
@@ -354,6 +370,7 @@ export class FigmaNodeConverter {
       whiteSpace: this.cssWhiteSpace(),
       width: this.cssWidth(),
       writingMode: this.cssWritingMode(),
+      zIndex: this.cssZIndex(),
     };
 
     return properties;
@@ -361,6 +378,25 @@ export class FigmaNodeConverter {
   /* getter methods - END */
 
   /* helper methods - BEGIN */
+  protected emulateStrokeAlign(): boolean {
+    return (
+      this.emulateStrokeAlignInsideAsBoxShadow() ||
+      this.emulateStrokeAlignOutsideAsOutline()
+    );
+  }
+
+  protected emulateStrokeAlignInsideAsBoxShadow(): boolean {
+    if (this.useLastLinearGradientStrokeAsBorderImage()) return false;
+
+    return this.nodeAsFrame.strokeAlign === 'INSIDE';
+  }
+
+  protected emulateStrokeAlignOutsideAsOutline(): boolean {
+    if (this.useLastLinearGradientStrokeAsBorderImage()) return false;
+
+    return this.nodeAsFrame.strokeAlign === 'OUTSIDE';
+  }
+
   protected buildChildren(): void {
     this.children = [];
 
@@ -694,25 +730,15 @@ export class FigmaNodeConverter {
   }
 
   cssBorderBottomWidth(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.emulateStrokeAlign()) return undefined;
+
     const result = this.borderBottomWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
   }
 
   cssBorderColor(): string | undefined {
-    // Suppress for INSIDE/OUTSIDE; emulate differently
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.emulateStrokeAlign()) return undefined;
 
     return this.topMostSolidStrokeColor;
   }
@@ -736,12 +762,8 @@ export class FigmaNodeConverter {
   }
 
   cssBorderLeftWidth(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.emulateStrokeAlign()) return undefined;
+
     const result = this.borderLeftWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -795,12 +817,8 @@ export class FigmaNodeConverter {
   }
 
   cssBorderRightWidth(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.emulateStrokeAlign()) return undefined;
+
     const result = this.borderRightWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -821,12 +839,9 @@ export class FigmaNodeConverter {
   // }
 
   cssBorderStyle(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.useLastLinearGradientStrokeAsBorderImage()) return 'solid'; // when using border-image, we need a border-style
+
+    if (this.emulateStrokeAlign()) return undefined;
     if (!this.cssBorderColor()) return undefined;
 
     if (this.nodeAsFrame.strokeDashes && this.nodeAsFrame.strokeDashes.length) {
@@ -884,12 +899,8 @@ export class FigmaNodeConverter {
   }
 
   cssBorderTopWidth(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
+    if (this.emulateStrokeAlign()) return undefined;
+
     const result = this.borderTopWidth();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -918,15 +929,24 @@ export class FigmaNodeConverter {
   }
 
   cssBorderWidth(): string | undefined {
-    if (
-      this.nodeAsFrame.strokeAlign &&
-      this.nodeAsFrame.strokeAlign !== 'CENTER'
-    ) {
-      return undefined;
-    }
-    const result = this.borderWidth();
+    let borderWidth: string | undefined = undefined;
 
-    return typeof result === 'number' ? this.numberToCssSize(result) : result;
+    if (!this.emulateStrokeAlign()) {
+      if (typeof this.borderWidth() === 'number') {
+        borderWidth = this.numberToCssSize(this.borderWidth());
+      }
+    }
+
+    // Provide a border-width when using border-image and no regular border width applies
+    if (!borderWidth && this.useLastLinearGradientStrokeAsBorderImage()) {
+      const strokeWeight = this.uniformStrokeWeight;
+
+      if (typeof strokeWeight === 'number' && strokeWeight > 0) {
+        borderWidth = this.numberToCssSize(roundFloat(strokeWeight));
+      }
+    }
+
+    return borderWidth;
   }
 
   bottom(): number | undefined {
@@ -996,7 +1016,7 @@ export class FigmaNodeConverter {
     });
 
     // Emulate INSIDE stroke with an inset ring box-shadow if applicable
-    if (this.nodeAsFrame.strokeAlign === 'INSIDE') {
+    if (this.emulateStrokeAlignInsideAsBoxShadow()) {
       const color = this.topMostSolidStrokeColor;
       const width = this.uniformStrokeWeight;
 
@@ -1019,7 +1039,7 @@ export class FigmaNodeConverter {
 
   cssOutline(): string | undefined {
     // Emulate OUTSIDE stroke with outline when uniform width and solid color
-    if (this.nodeAsFrame.strokeAlign === 'OUTSIDE') {
+    if (this.emulateStrokeAlignOutsideAsOutline()) {
       const color = this.topMostSolidStrokeColor;
       const width = this.uniformStrokeWeight;
 
@@ -1841,6 +1861,52 @@ export class FigmaNodeConverter {
     const result = this.right();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
+  }
+
+  private useLastLinearGradientStrokeAsBorderImage(): boolean {
+    if (
+      typeof this.uniformStrokeWeight !== 'number' ||
+      this.uniformStrokeWeight <= 0
+    ) {
+      return false;
+    }
+
+    if (
+      this.nodeAsFrame.strokeDashes &&
+      this.nodeAsFrame.strokeDashes.length > 0
+    ) {
+      return false;
+    }
+
+    const paint = this.lastLinearGradientStroke;
+
+    if (!paint) return false;
+
+    const src = figmaGradientPaintToCssLinearGradient(paint);
+
+    return !!src;
+  }
+
+  cssBorderImageSource(): string | undefined {
+    if (!this.useLastLinearGradientStrokeAsBorderImage()) return undefined;
+
+    const paint = this.lastLinearGradientStroke;
+
+    if (!paint) return undefined;
+
+    return figmaGradientPaintToCssLinearGradient(paint) || undefined;
+  }
+
+  cssBorderImageSlice(): string | undefined {
+    if (!this.useLastLinearGradientStrokeAsBorderImage()) return undefined;
+
+    return '1';
+  }
+
+  cssBorderImageRepeat(): string | undefined {
+    if (!this.useLastLinearGradientStrokeAsBorderImage()) return undefined;
+
+    return 'stretch';
   }
 
   cssZIndex(): string | undefined {
