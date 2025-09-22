@@ -1,10 +1,11 @@
 {
   "name": "websolut-desktop",
-  "version": "0.3.0-alpha",
+  "version": "0.4.0-alpha",
   "description": "An Electron application with Vue and TypeScript",
+  "private": true,
+  "license": "MIT",
   "main": "./out/main/index.js",
   "config": {},
-  "author": "example.com",
   "type": "module",
   "homepage": "https://electron-vite.org",
   "scripts": {
