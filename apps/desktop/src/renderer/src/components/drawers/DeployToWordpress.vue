@@ -22,6 +22,7 @@ const {
 const emit = defineEmits<{
   (e: 'deploy-start', token: string, baseUrl: string): void;
   (e: 'go-back'): void;
+  (e: 'reset-deployment-request'): void;
 }>();
 
 const props = defineProps<{
@@ -49,6 +50,13 @@ function handleSubmitClick() {
 
   emit('deploy-start', token.value, baseUrl.value);
 }
+
+function handleSetupAgain() {
+  setupAgain.value = true;
+  emit('reset-deployment-request');
+  baseUrl.value = projectWordpressBaseUrl(props.project);
+  token.value = projectWordpressToken(props.project);
+}
 </script>
 
 <template>
@@ -75,7 +83,7 @@ function handleSubmitClick() {
       :deploy-successful="projectDeployToWordpressSuccess(project)"
       :error-title="projectDeployToWordpressErrorTitle(project)"
       :error-description="projectDeployToWordpressErrorMessage(project)"
-      @dismiss="setupAgain = true"
+      @dismiss="handleSetupAgain"
       @visit="visitWebsite"
     />
 

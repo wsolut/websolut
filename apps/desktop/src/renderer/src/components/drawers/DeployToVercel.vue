@@ -22,6 +22,7 @@ const {
 const emit = defineEmits<{
   (e: 'deploy-start', token: string, projectName: string): void;
   (e: 'go-back'): void;
+  (e: 'reset-deployment-request'): void;
 }>();
 
 const props = defineProps<{
@@ -46,6 +47,13 @@ function handleSubmitClick() {
   setupAgain.value = false;
 
   emit('deploy-start', token.value, projectName.value);
+}
+
+function handleSetupAgain() {
+  setupAgain.value = true;
+  emit('reset-deployment-request');
+  projectName.value = projectVercelName(props.project);
+  token.value = projectVercelToken(props.project);
 }
 </script>
 
@@ -73,7 +81,7 @@ function handleSubmitClick() {
       :deploy-successful="projectDeployToVercelSuccess(project)"
       :error-title="projectDeployToVercelErrorTitle(project)"
       :error-description="projectDeployToVercelErrorMessage(project)"
-      @dismiss="setupAgain = true"
+      @dismiss="handleSetupAgain"
       @visit="visitWebsite"
     />
 
