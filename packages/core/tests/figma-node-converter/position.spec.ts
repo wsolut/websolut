@@ -6,85 +6,159 @@ describe('NodeWrapper', () => {
   describe('#cssPosition', () => {
     describe("when parent.type is 'SECTION'", () => {
       it("should be 'absolute'", () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
+        });
+        const frameAncestor = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameAncestor);
+        const sectionParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.section },
+          frameAncestor,
+        );
+        frameAncestor.children.push(sectionParent);
         const instance = FigmaNodeConverter.create(
           { ...FigmaExamples.frame },
-          FigmaNodeConverter.create({
-            ...FigmaExamples.section,
-          }),
+          sectionParent,
         );
+        sectionParent.children.push(instance);
+
         expect(instance.cssPosition()).toBe('absolute');
       });
     });
 
     describe("when parent.type is 'GROUP'", () => {
       it("should be 'absolute'", () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
+        });
+        const frameAncestor = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameAncestor);
+        const groupParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.group },
+          frameAncestor,
+        );
+        frameAncestor.children.push(groupParent);
         const instance = FigmaNodeConverter.create(
           { ...FigmaExamples.frame },
-          FigmaNodeConverter.create({
-            ...FigmaExamples.group,
-          }),
+          groupParent,
         );
+        groupParent.children.push(instance);
+
         expect(instance.cssPosition()).toBe('absolute');
       });
     });
 
     describe("when parent.layoutMode is 'NONE'", () => {
       it("should be 'absolute'", () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
+        });
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'NONE' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameParent);
         const instance = FigmaNodeConverter.create(
           { ...FigmaExamples.frame },
-          FigmaNodeConverter.create({
-            ...FigmaExamples.frame,
-            layoutMode: 'NONE',
-          }),
+          frameParent,
         );
+        frameParent.children.push(instance);
+
         expect(instance.cssPosition()).toBe('absolute');
       });
     });
 
     describe("when layoutMode is 'VERTICAL'", () => {
-      it('should be blank', () => {
-        const instance = FigmaNodeConverter.create({
-          ...FigmaExamples.frame,
-          layoutMode: 'VERTICAL',
+      it('should be undefined', () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
         });
-        expect(instance.cssPosition()).toBe(undefined);
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameParent);
+        const instance = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'VERTICAL' },
+          frameParent,
+        );
+        frameParent.children.push(instance);
+
+        expect(instance.cssPosition()).toBeUndefined();
       });
     });
 
     describe('when parent.layoutMode is not present', () => {
-      it('should be blank', () => {
+      it("should be 'absolute'", () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
+        });
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame },
+          canvasParent,
+        );
+        canvasParent.children.push(frameParent);
         const instance = FigmaNodeConverter.create(
           { ...FigmaExamples.frame },
-          FigmaNodeConverter.create({
-            ...FigmaExamples.frame,
-          }),
+          frameParent,
         );
-        expect(instance.cssPosition()).toBe(undefined);
+        frameParent.children.push(instance);
+
+        expect(instance.cssPosition()).toBe('absolute');
       });
     });
 
     describe("when 'isFixed' is 'true'", () => {
       it("should be 'fixed'", () => {
-        const instance = FigmaNodeConverter.create({
-          ...FigmaExamples.frame,
-          isFixed: true,
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
         });
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameParent);
+        const instance = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, isFixed: true },
+          frameParent,
+        );
+        frameParent.children.push(instance);
+
         expect(instance.cssPosition()).toBe('fixed');
       });
     });
 
     describe("when 'layoutPositioning' is 'ABSOLUTE'", () => {
-      it("should be 'absolute'", () => {
-        const instance = FigmaNodeConverter.create({
-          ...FigmaExamples.frame,
-          layoutPositioning: 'ABSOLUTE',
+      it('should be absolute, when parent is not rootNode', () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
         });
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameParent);
+        const instance = FigmaNodeConverter.create(
+          {
+            ...FigmaExamples.text,
+            layoutPositioning: 'ABSOLUTE',
+          },
+          frameParent,
+        );
+        frameParent.children.push(instance);
+
         expect(instance.cssPosition()).toBe('absolute');
       });
     });
 
-    describe("when a child has 'layoutPositioning' is 'ABSOLUTE'", () => {
-      it("should be 'relative'", () => {
+    describe("when 'layoutPositioning' is 'ABSOLUTE'", () => {
+      it("should be 'fixed' when parent is rootNode", () => {
         const parent = FigmaNodeConverter.create({ ...FigmaExamples.canvas });
         const instance = FigmaNodeConverter.create(
           {
@@ -95,7 +169,37 @@ describe('NodeWrapper', () => {
         );
         parent.children.push(instance);
 
-        expect(parent.cssPosition()).toBe('relative');
+        expect(instance.cssPosition()).toBe('fixed');
+      });
+    });
+
+    describe("when a child has 'layoutPositioning' is 'ABSOLUTE'", () => {
+      it("should be 'relative'", () => {
+        const canvasParent = FigmaNodeConverter.create({
+          ...FigmaExamples.canvas,
+        });
+        const frameAncestor = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          canvasParent,
+        );
+        canvasParent.children.push(frameAncestor);
+
+        const frameParent = FigmaNodeConverter.create(
+          { ...FigmaExamples.frame, layoutMode: 'GRID' },
+          frameAncestor,
+        );
+        frameAncestor.children.push(frameParent);
+
+        const instance = FigmaNodeConverter.create(
+          {
+            ...FigmaExamples.text,
+            layoutPositioning: 'ABSOLUTE',
+          },
+          frameParent,
+        );
+        frameParent.children.push(instance);
+
+        expect(frameParent.cssPosition()).toBe('relative');
       });
     });
   });
