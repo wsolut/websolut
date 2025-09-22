@@ -215,11 +215,25 @@ export class FigmaNodeConverter {
   }
 
   domxText(): string | undefined {
-    if (this.nodeType === 'TEXT') {
-      return this.nodeAsText.characters || '';
-    }
+    if (this.nodeType !== 'TEXT') return undefined;
 
-    return undefined;
+    const text = this.nodeAsText.characters || '';
+
+    return (
+      text
+        // Carriage return + line feed (CRLF)
+        .replace(/\r\n/g, `\n`)
+        // Carriage return only (CR)
+        .replace(/\r/g, `\n`)
+        // Unicode line separator
+        .replace(/\u2028/g, `\n`)
+        // Unicode paragraph separator
+        .replace(/\u2029/g, `\n`)
+        // Next line (NEL)
+        .replace(/\u0085/g, `\n`)
+        // Vertical tab
+        .replace(/\v/g, `\n`)
+    );
   }
 
   domxAssets(): DomxNodeAssets | undefined {

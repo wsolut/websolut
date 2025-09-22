@@ -26,8 +26,7 @@
     let content = renderDomxNodeChildren(domxNode);
 
     if (domxNode.text) {
-      // Handle multiple types of line breaks and whitespace characters
-      const processedValue = processTextValue(domxNode.text);
+      const processedValue = domxNode.text.replace(/\n/g, '<br />');
 
       content = `${processedValue}${content}`;
     }
@@ -43,26 +42,6 @@
     const children = domxNode.childrenIds.map((childId) => flatDomxNodes[childId]);
 
     return children.map((child) => renderDomxNode(child)).join(`\n`);
-  }
-
-  function processTextValue(text) {
-    return (
-      text
-        // Standard newline (LF)
-        .replace(/\n/g, '<br />')
-        // Carriage return + line feed (CRLF)
-        .replace(/\r\n/g, '<br />')
-        // Carriage return only (CR)
-        .replace(/\r/g, '<br />')
-        // Unicode line separator
-        .replace(/\u2028/g, '<br />')
-        // Unicode paragraph separator
-        .replace(/\u2029/g, '<br />')
-        // Next line (NEL)
-        .replace(/\u0085/g, '<br />')
-        // Vertical tab
-        .replace(/\v/g, '<br />')
-    );
   }
 -%>
 <!doctype html>

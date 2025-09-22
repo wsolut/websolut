@@ -1,6 +1,6 @@
 {
   "name": "@wsolut/websolut-core",
-  "version": "0.3.0-alpha",
+  "version": "0.3.1-alpha",
   "description": "Utilitary classes to convert Figma Nodes to a JSON format closer to DOM.",
   "license": "MIT",
   "publishConfig": {
