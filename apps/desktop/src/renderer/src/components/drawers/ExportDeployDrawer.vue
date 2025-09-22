@@ -4,12 +4,13 @@
 
     <DeployToVercel
       v-if="showVercelDeployView"
-      :show-deployment-status="showVercelDeploymentStatus"
       @go-back="handleVercelDeployGoBack"
       @deploy-start="handleDeployToVercel"
       @dismiss-deployment-status="showVercelDeploymentStatus = false"
+      @reset-deployment-request="handleResetVercelRequest"
       :project="project"
       :deployment-request="vercelDeploymentRequest"
+      :show-deployment-status="showVercelDeploymentStatus"
     />
 
     <DeployToWordpress
@@ -17,6 +18,7 @@
       @go-back="handleWordpressDeployGoBack"
       @deploy-start="handleDeployToWordpress"
       @dismiss-deployment-status="showWordpressDeploymentStatus = false"
+      @reset-deployment-request="handleResetWordpressRequest"
       :project="project"
       :deployment-request="wordpressDeploymentRequest"
       :show-deployment-status="showWordpressDeploymentStatus"
@@ -120,6 +122,10 @@ function handleDrawerClose() {
   emit('close');
 
   showVercelDeployView.value = false;
+  showWordpressDeployView.value = false;
+
+  vercelDeploymentRequest.status = 'idle';
+  wordpressDeploymentRequest.status = 'idle';
 }
 
 async function handleExportToHtml() {
@@ -169,6 +175,14 @@ function handleVercelDeployGoBack() {
 function handleWordpressDeployGoBack() {
   showWordpressDeployView.value = false;
 
+  wordpressDeploymentRequest.status = 'idle';
+}
+
+function handleResetVercelRequest() {
+  vercelDeploymentRequest.status = 'idle';
+}
+
+function handleResetWordpressRequest() {
   wordpressDeploymentRequest.status = 'idle';
 }
 </script>
