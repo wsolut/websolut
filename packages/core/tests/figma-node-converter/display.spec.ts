@@ -5,12 +5,12 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 describe('NodeWrapper', () => {
   describe('#display', () => {
     describe('layoutMode is NONE', () => {
-      it('should be blank', () => {
+      it('should be undefined', () => {
         const instance = FigmaNodeConverter.create({
           ...FigmaExamples.frame,
           layoutMode: 'NONE',
         });
-        expect(instance.cssDisplay()).toBeFalsy();
+        expect(instance.cssDisplay()).toBeUndefined();
       });
     });
 

@@ -291,7 +291,13 @@ export class FigmaNodeConverter {
   domxNodeStyle(): DomxNodeStyle {
     if (this.nodeIsImgType()) {
       // For now let's clear all css style for img's since they are all SVGs
-      return {};
+      return {
+        bottom: this.cssBottom(),
+        left: this.cssLeft(),
+        position: this.cssPosition(),
+        right: this.cssRight(),
+        top: this.cssTop(),
+      };
     }
 
     const properties: DomxNodeStyle = {
@@ -1891,6 +1897,10 @@ export class FigmaNodeConverter {
   }
 
   cssPosition(): csstype.Property.Position | undefined {
+    if (this.rootNode) {
+      return undefined;
+    }
+
     if (this.nodeAsFrame.layoutPositioning === 'ABSOLUTE') {
       if (this.parent?.rootNode) {
         return 'fixed';
@@ -1903,15 +1913,11 @@ export class FigmaNodeConverter {
       return 'fixed';
     }
 
-    if (this.parent?.nodeAsFrame.layoutMode === 'NONE') {
+    if (['SECTION', 'GROUP'].includes(this.parent?.nodeType)) {
       return 'absolute';
     }
 
-    if (this.parent?.nodeType === 'SECTION') {
-      return 'absolute';
-    }
-
-    if (this.parent?.nodeType === 'GROUP') {
+    if (['NONE', undefined].includes(this.parent?.nodeAsFrame.layoutMode)) {
       return 'absolute';
     }
 
