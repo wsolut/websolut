@@ -11,7 +11,7 @@
     "EXPIRED": "[JA] is expired",
     "INVALID_EMAIL": "[JA] invalid email format",
     "INVALID": "[JA] is invalid",
-    "TAKEN": "[JA] is taken",
+    "TAKEN": "[JA] already exists",
     "MUST_MATCH": "[JA] must match \"{property}\"",
     "MUST_BE_ENABLED": "[JA] must be enabled"
   },

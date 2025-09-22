@@ -4,7 +4,7 @@ import { copyDirSync, createDirSync } from '../utils';
 const isDist = __dirname.includes(`${path.sep}dist${path.sep}`);
 
 export const DATA_DIR_NAME = 'data';
-export const DATABASE_FILE_NAME = 'database.sqlite';
+export const DATABASE_FILE_NAME = 'database.v0.sqlite';
 export const DEPLOY_DIR_NAME = 'deploy';
 export const EXPORT_DIR_NAME = 'export';
 export const I18N_DIR_NAME = 'i18n';

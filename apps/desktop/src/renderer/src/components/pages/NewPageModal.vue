@@ -33,7 +33,6 @@ const { isDirty, rollback } = useDirtyState(blankPage.value);
 
 function clearPage() {
   rollback(page);
-  pageCreateRequest.errors = {};
   pageCreateRequest.status = 'idle';
 }
 
