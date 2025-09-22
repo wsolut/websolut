@@ -4,7 +4,8 @@
     "PREVIEW_NOT_FOUND": "This Page's preview is not yet available"
   },
   "VALIDATIONS": {
-    "MUST_HAVE_ONE_HOME_PAGE": "Project needs one home page"
+    "MUST_HAVE_ONE_HOME_PAGE": "Project needs one home page",
+    "TAKEN": "Route already exists"
   },
   "FIGMA_URL": {
     "INVALID":"Figma URL is invalid",
