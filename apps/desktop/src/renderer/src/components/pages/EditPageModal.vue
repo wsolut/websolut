@@ -30,7 +30,6 @@ const pageUpdateRequest = reactive(new RequestStatus());
 
 function closeModal() {
   pageUpdateRequest.status = 'idle';
-  pageUpdateRequest.errors = {};
   page.value = { ...props.page };
   emit('close');
 }

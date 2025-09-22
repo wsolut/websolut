@@ -11,7 +11,7 @@
     "EXPIRED": "is expired",
     "INVALID_EMAIL": "invalid email format",
     "INVALID": "is invalid",
-    "TAKEN": "is taken",
+    "TAKEN": "already exists",
     "MUST_MATCH": "must match \"{property}\"",
     "MAX_LENGTH": "cannot be longer than {length} characters",
     "MUST_BE_ENABLED": "must be enabled"

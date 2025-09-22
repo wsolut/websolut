@@ -90,7 +90,6 @@ async function handleAssetsOutDirClick() {
 
 function clearProject() {
   rollback(project);
-  projectCreateRequest.errors = {};
   projectCreateRequest.status = 'idle';
 }
 

@@ -1,13 +1,15 @@
 <%
   const flatDomxNodes = document.nodes;
-  const body = flatDomxNodes[document.bodyId];
 
   function renderDomxNode(domxNode) {
     const tagName = domxNode.name.toLowerCase();
     const attributes = renderDomxNodeAttributes(domxNode.attributes);
     const content = renderDomxNodeContent(domxNode);
 
-    return beautifyHtml(`<${tagName}${(attributes ?? '') !== '' ? ' ' + attributes : ''}>${content}</${tagName}>`, { indent_size: 2 });
+    return beautifyHtml(
+      `<${tagName}${(attributes ?? '') !== '' ? ' ' + attributes : ''}>${content}</${tagName}>`,
+      { indent_size: 2 }
+    );
   }
 
   function renderDomxNodeAttributes(attributes) {
@@ -68,12 +70,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= document.metadata.title %></title>
-  <link media="all" rel="stylesheet" href="./styles.css?t=<%= Date.now() %>"></link>
+  <title><%- document.metadata.figmaFile.name %></title>
+  <link media="all" rel="stylesheet" href="./styles.css"></link>
 </head>
-<body>
-  <div <%- renderDomxNodeAttributes(body.attributes) %>>
-<%- renderDomxNodeContent(body) %>
-  </div>
-</body>
+<%- renderDomxNode(flatDomxNodes[document.bodyId]) %>
 </html>
