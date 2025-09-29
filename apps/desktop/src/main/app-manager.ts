@@ -3,7 +3,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Manager as BackendManager, PortAlreadyInUseError } from 'websolut-backend';
-import trayIconTemplate from '../../resources/trayTemplate.png?asset';
+import trayIconTemplate from '../../resources/trayIcon.png?asset';
 import { browserWindowConfig } from './config/browser-window-config';
 import chokidar, { FSWatcher } from 'chokidar';
 import dotenv from 'dotenv';
@@ -208,10 +208,11 @@ export class AppManager {
   }
 
   protected createTrayIcon(): Tray {
-    const trayIcon = nativeImage.createFromPath(trayIconTemplate).resize({ width: 16, height: 16 });
-    trayIcon.setTemplateImage(true);
+    const trayIcon = nativeImage.createFromPath(trayIconTemplate);
+    const smallerTrayIcon = trayIcon.resize({ width: 20, height: 20 });
+    smallerTrayIcon.setTemplateImage(true);
 
-    const tray = new Tray(trayIcon);
+    const tray = new Tray(smallerTrayIcon);
     tray.setToolTip('Websolut Desktop App');
     tray.setContextMenu(this.createContextMenu());
     tray.setIgnoreDoubleClickEvents(true);
@@ -228,6 +229,8 @@ export class AppManager {
 
   protected createContextMenu(): Menu {
     return Menu.buildFromTemplate([
+      { label: 'Websolut Desktop App', enabled: false },
+      { type: 'separator' },
       {
         label: 'Status',
         click: () => {
