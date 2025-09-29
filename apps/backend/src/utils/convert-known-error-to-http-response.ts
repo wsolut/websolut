@@ -2,6 +2,7 @@ import {
   InvalidArgumentError,
   NotFoundError,
   PermissionDeniedError,
+  ServiceUnavailableError,
 } from '../entities/errors';
 import {
   HttpInvalidArgumentErrorResponseDto,
@@ -24,6 +25,10 @@ export function convertKnownErrorToHttpResponse(
 
   if (error instanceof PermissionDeniedError) {
     return { code: 403, message };
+  }
+
+  if (error instanceof ServiceUnavailableError) {
+    return { code: 503, message };
   }
 
   // Report error to Sentry or similar service

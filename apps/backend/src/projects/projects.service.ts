@@ -183,7 +183,7 @@ export class ProjectsService extends BaseService {
 
     if (await this.projectsRepository.exists({ where })) {
       result.errors['name'] ||= [];
-      result.errors['name'].push(this.langService.t('.VALIDATIONS.TAKEN'));
+      result.errors['name'].push(this.langService.t('.VALIDATIONS.NAME.TAKEN'));
     }
 
     if (Object.keys(result.errors).length) {

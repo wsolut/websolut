@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
-import DeploymentStatus from '@/components/drawers/DeploymentStatus.vue';
 import { Project } from '@/@types';
 import { useProjects } from '@/composables';
 import { RequestStatus } from '@/entities';
@@ -11,18 +10,16 @@ import { RequestStatus } from '@/entities';
 const {
   projectWordpressBaseUrl,
   projectWordpressToken,
-  projectWordpressUrl,
   projectIsDeployingToWordpress,
-  projectDeployToWordpressComplete,
-  projectDeployToWordpressSuccess,
-  projectDeployToWordpressErrorTitle,
+  projectWordpressUrl,
+  projectDeployToWordpressFinished,
   projectDeployToWordpressErrorMessage,
 } = useProjects();
 
 const emit = defineEmits<{
   (e: 'deploy-start', token: string, baseUrl: string): void;
   (e: 'go-back'): void;
-  (e: 'reset-deployment-request'): void;
+  (e: 'has-unsaved-changes', hasChanges: boolean): void;
 }>();
 
 const props = defineProps<{
@@ -32,39 +29,55 @@ const props = defineProps<{
 
 const baseUrl = ref<string>(projectWordpressBaseUrl(props.project));
 const token = ref<string>(projectWordpressToken(props.project));
-const setupAgain = ref<boolean>(false);
-const showDeploymentStatus = computed<boolean>(() => {
-  if (setupAgain.value) return false;
+const initialBaseUrl = ref<string>('');
+const initialToken = ref<string>('');
 
-  return (
-    projectIsDeployingToWordpress(props.project) || projectDeployToWordpressComplete(props.project)
-  );
+const latestDeploymentUrl = computed(() => projectWordpressUrl(props.project) || '');
+const deployFinished = computed(() => projectDeployToWordpressFinished(props.project));
+const deployErrorMessage = computed(() => projectDeployToWordpressErrorMessage(props.project));
+const isDeployingGlobally = computed(() => projectIsDeployingToWordpress(props.project));
+const isDeployingLocally = computed(() => {
+  return props.deploymentRequest?.pending ?? false;
+});
+const isDeploying = computed(() => isDeployingLocally.value || isDeployingGlobally.value);
+const hasUnsavedChanges = computed<boolean>(() => {
+  return baseUrl.value !== initialBaseUrl.value || token.value !== initialToken.value;
 });
 
-function visitWebsite() {
-  window.open(projectWordpressUrl(props.project), '_blank');
-}
+watch(
+  hasUnsavedChanges,
+  (newValue) => {
+    emit('has-unsaved-changes', newValue);
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  initialBaseUrl.value = projectWordpressBaseUrl(props.project);
+  initialToken.value = projectWordpressToken(props.project);
+});
 
 function handleSubmitClick() {
-  setupAgain.value = false;
-
+  initialBaseUrl.value = baseUrl.value;
+  initialToken.value = token.value;
   emit('deploy-start', token.value, baseUrl.value);
 }
 
-function handleSetupAgain() {
-  setupAgain.value = true;
-  emit('reset-deployment-request');
-  baseUrl.value = projectWordpressBaseUrl(props.project);
-  token.value = projectWordpressToken(props.project);
+function handleGoBack() {
+  emit('go-back');
+}
+
+function handleLatestDeploymentUrlClick() {
+  window.open(latestDeploymentUrl.value, '_blank');
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 px-2">
+  <div class="flex flex-col px-2">
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <button
-        @click="emit('go-back')"
+        @click="handleGoBack"
         class="h-8 w-8 text-gray-400 flex items-center justify-center rounded bg-gray-850 hover:bg-gray-800 transition-colors"
       >
         <Icon icon="mdi:chevron-left" class="text-gray-100" />
@@ -75,19 +88,7 @@ function handleSetupAgain() {
       <div class="w-10"></div>
     </div>
 
-    <!-- Deployment Status Screen -->
-    <DeploymentStatus
-      v-if="showDeploymentStatus"
-      :project="project"
-      :deploying="deploymentRequest.pending || projectIsDeployingToWordpress(props.project)"
-      :deploy-successful="projectDeployToWordpressSuccess(project)"
-      :error-title="projectDeployToWordpressErrorTitle(project)"
-      :error-description="projectDeployToWordpressErrorMessage(project)"
-      @dismiss="handleSetupAgain"
-      @visit="visitWebsite"
-    />
-
-    <div v-else>
+    <div>
       <div class="flex flex-col gap-4">
         <Input
           v-model="baseUrl"
@@ -102,7 +103,7 @@ function handleSetupAgain() {
         <Input
           v-model="token"
           placeholder="Enter access token"
-          label="WordPress Access Token"
+          label="Access Token"
           label-class="text-sm font-light"
           required
           class="w-full text-sm placeholder:text-gray-500"
@@ -110,11 +111,45 @@ function handleSetupAgain() {
         />
       </div>
 
-      <div class="rounded-md border-1 border-[#394147] bg-transparent p-4 mt-5 py-5">
+      <div
+        v-if="deployFinished"
+        class="rounded-md border-1 border-[#394147] bg-transparent px-4 py-5 mt-8"
+      >
+        <div class="flex items-start gap-3">
+          <div v-if="deployErrorMessage === ''" class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <Icon icon="material-symbols:arrow-upload-ready-rounded" class="text-xl" />
+              <h3 class="text-gray-100">Latest Deployment URL</h3>
+            </div>
+
+            <Input
+              v-model="latestDeploymentUrl"
+              label-class="text-sm font-light"
+              readonly
+              action-button-icon="mdi:open-in-new"
+              @action-button-click="handleLatestDeploymentUrlClick"
+              class="w-full text-sm placeholder:text-gray-500"
+            />
+          </div>
+
+          <div v-else class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <Icon icon="material-symbols:error-rounded" class="text-xl text-red-500" />
+              <h3 class="text-gray-100">Latest Deploy Failed</h3>
+            </div>
+
+            <p class="text-sm text-gray-400 font-light">
+              {{ deployErrorMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-md border-1 border-[#394147] bg-transparent px-4 py-5 mt-8">
         <div class="flex items-start gap-3">
           <div class="flex-1">
-            <div class="flex items-center gap-4 mb-2">
-              <Icon icon="material-symbols:info-outline-rounded" class="text-xl text-gray-400" />
+            <div class="flex items-center gap-2 mb-2">
+              <Icon icon="material-symbols:info-outline-rounded" class="text-xl text-blue-500" />
               <h3 class="text-gray-100">How to setup Wordpress Plugin?</h3>
             </div>
             <p class="text-sm text-gray-400 font-light">
@@ -127,13 +162,12 @@ function handleSetupAgain() {
 
       <!-- Buttons -->
       <div class="flex justify-end gap-6 mt-8">
-        <Button @click="emit('go-back')" variant="secondary" class="px-4 py-2">Abort</Button>
+        <Button @click="handleGoBack" variant="secondary" class="px-4 py-2">Abort</Button>
         <Button
           @click="handleSubmitClick"
-          variant="primary"
-          class="px-4 py-2"
-          :disabled="deploymentRequest.pending"
-          >{{ deploymentRequest.pending ? 'Deploying...' : 'Deploy' }}</Button
+          :disabled="isDeploying"
+          :class="isDeploying ? 'cursor-not-allowed' : 'cursor-pointer'"
+          >{{ isDeploying ? 'Deploying...' : 'Deploy' }}</Button
         >
       </div>
     </div>

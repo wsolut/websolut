@@ -33,12 +33,15 @@ const props = defineProps<{
 
 const page = computed(() => props.page);
 const selectedTab = ref('content');
-const showVercelDeployView = ref(false);
-const showVercelDeploymentStatus = ref(false);
-const showWordpressDeployView = ref(false);
-const showWordpressDeploymentStatus = ref(false);
+
 const vercelDeploymentRequest = reactive(new RequestStatus());
 const wordpressDeploymentRequest = reactive(new RequestStatus());
+
+const deployingToVercel = computed(() => vercelDeploymentRequest.status === 'pending');
+const deployingToWordpress = computed(() => wordpressDeploymentRequest.status === 'pending');
+
+const showVercelDeployView = ref(false);
+const showWordpressDeployView = ref(false);
 
 function handleDrawerClose() {
   emit('close');
@@ -93,13 +96,6 @@ function handleVercelDeployGoBack() {
 
 function handleWordpressDeployGoBack() {
   showWordpressDeployView.value = false;
-  wordpressDeploymentRequest.status = 'idle';
-}
-function handleResetVercelRequest() {
-  vercelDeploymentRequest.status = 'idle';
-}
-
-function handleResetWordpressRequest() {
   wordpressDeploymentRequest.status = 'idle';
 }
 </script>
@@ -157,29 +153,23 @@ function handleResetWordpressRequest() {
         v-if="showVercelDeployView"
         @go-back="handleVercelDeployGoBack"
         @deploy-start="handleDeployToVercel"
-        @dismiss-deployment-status="showVercelDeploymentStatus = false"
-        @reset-deployment-request="handleResetVercelRequest"
         :project="project"
         :deployment-request="vercelDeploymentRequest"
-        :show-deployment-status="showVercelDeploymentStatus"
       />
 
       <DeployToWordpress
         v-if="showWordpressDeployView"
         @go-back="handleWordpressDeployGoBack"
         @deploy-start="handleDeployToWordpress"
-        @dismiss-deployment-status="showWordpressDeploymentStatus = false"
-        @reset-deployment-request="handleResetWordpressRequest"
         :project="project"
         :deployment-request="wordpressDeploymentRequest"
-        :show-deployment-status="showWordpressDeploymentStatus"
       />
 
       <div v-if="!showVercelDeployView && !showWordpressDeployView">
         <PreviewDrawerExportDeployTab
-          :deploying-to-vercel="vercelDeploymentRequest.pending"
+          :deploying-to-vercel="deployingToVercel"
           :vercel-token="projectVercelToken(project)"
-          :deploying-to-wordpress="wordpressDeploymentRequest.pending"
+          :deploying-to-wordpress="deployingToWordpress"
           :wordpress-token="projectWordpressToken(project)"
           :wordpress-base-url="projectWordpressBaseUrl(project)"
           :project-name="projectVercelName(project)"
