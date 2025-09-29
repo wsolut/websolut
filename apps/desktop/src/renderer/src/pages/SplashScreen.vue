@@ -126,7 +126,7 @@ const dots = Array.from({ length: dotCount }, (_, i) => {
         <div>
           <p class="mb-1">Repository:</p>
           <a
-            href="https://https://github.com/wsolut/websolut"
+            href="https://github.com/wsolut/websolut"
             target="_blank"
             class="text-white hover:text-gray-400 font-extralight"
           >
