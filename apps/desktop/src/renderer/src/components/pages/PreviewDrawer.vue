@@ -40,6 +40,7 @@ const wordpressDeploymentRequest = reactive(new RequestStatus());
 function handleDrawerClose() {
   emit('close');
   showVercelDeployView.value = false;
+  showWordpressDeployView.value = false;
 }
 
 async function handleExportToHtml() {
