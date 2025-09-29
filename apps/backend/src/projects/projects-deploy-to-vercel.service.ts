@@ -15,7 +15,10 @@ import {
   NetworkUnavailableError,
   ServiceUnavailableError,
   VercelInvalidTokenError,
+  VercelInvalidProjectNameError,
 } from '../entities';
+
+const NAME_MAX_LENGTH = 100;
 
 @Injectable()
 export class ProjectsDeployToVercelService extends BaseService {
@@ -45,7 +48,15 @@ export class ProjectsDeployToVercelService extends BaseService {
         projectName: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') })
+          .max(NAME_MAX_LENGTH, {
+            message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
+              length: NAME_MAX_LENGTH,
+            }),
+          })
+          .refine((val) => val === '' || /^(?!.*---)[a-z0-9._-]+$/.test(val), {
+            message: this.langService.t('.VALIDATIONS.NAME.INVALID'),
+          }),
       }),
       input,
     );
@@ -98,6 +109,19 @@ export class ProjectsDeployToVercelService extends BaseService {
           errorMessage: [
             this.langService.t('.ATTRIBUTES.VERCEL_TOKEN'),
             this.langService.t('.VALIDATIONS.INVALID'),
+          ].join(' '),
+        });
+
+        throw new InvalidArgumentError(
+          this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+          { token: [this.langService.t('.VALIDATIONS.INVALID')] },
+        );
+      } else if (error instanceof VercelInvalidProjectNameError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 422,
+          errorMessage: [
+            this.langService.t('.ATTRIBUTES.VERCEL_PROJECT_NAME'),
+            this.langService.t('.VALIDATIONS.NAME.INVALID'),
           ].join(' '),
         });
 

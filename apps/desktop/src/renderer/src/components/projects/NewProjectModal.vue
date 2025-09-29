@@ -35,6 +35,7 @@ import { useDirtyState } from '@/composables';
 const projectCreateRequest = reactive(new RequestStatus());
 const emit = defineEmits(['close', 'created']);
 const showUnsavedModal = ref(false);
+const isTagsFocused = ref(false);
 
 // Form state
 const blankProject: ProjectInputDto = reactive({
@@ -220,7 +221,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
                 <Input
                   v-model="project.name"
                   class="w-full text-sm placeholder:text-gray-500 break-words whitespace-pre-wrap"
-                  variant="gray"
                   placeholder="e.g. customer's name"
                   :errors="projectCreateRequest.errors.name"
                 />
@@ -233,7 +233,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
               <div class="flex-1">
                 <TextArea
                   v-model="project.description"
-                  variant="gray"
                   class="w-full text-sm placeholder:text-gray-500 break-words whitespace-pre-wrap max-h-40"
                   placeholder="e.g. Think about form and shape..."
                   input-type="textarea"
@@ -251,7 +250,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
               </label>
               <TagsInputRoot
                 v-model="project.tags"
-                class="flex flex-wrap gap-2 items-start border border-[#252a35] rounded-lg p-2 w-full bg-[#0F1519] max-h-24 overflow-y-auto"
+                class="flex flex-wrap gap-2 items-start rounded-lg p-2 w-full bg-[#0F1519] max-h-24 overflow-y-auto transition-colors border-1"
+                :class="{
+                  'border-red-500': projectCreateRequest.errors.tags?.length,
+                  'border-white': isTagsFocused && !projectCreateRequest.errors.tags?.length,
+                  'border-[#252a35]': !isTagsFocused && !projectCreateRequest.errors.tags?.length,
+                }"
               >
                 <TagsInputItem
                   v-for="(tag, index) in project.tags || []"
@@ -269,6 +273,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
                 <TagsInputInput
                   placeholder="e.g. comma separated tags"
                   class="flex-1 min-w-[60px] bg-transparent text-sm px-1 py-1 focus:outline-none placeholder:text-gray-500"
+                  @focus="isTagsFocused = true"
+                  @blur="isTagsFocused = false"
                   @keydown="handleTagInput"
                 />
               </TagsInputRoot>

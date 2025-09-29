@@ -1,6 +1,5 @@
 import { JobStatus, Project } from '@/@types';
 import { useJobStatuses } from './useJobStatuses';
-import { toKebabCase } from '@/utils';
 
 const { findJobStatus, jobFinished, jobRunning, jobFailed, jobSuccessful } = useJobStatuses();
 
@@ -24,7 +23,7 @@ export function useProjects() {
 
   function projectVercelName(project: Project): string {
     const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-vercel');
-    const defaultName = toKebabCase(project.name);
+    const defaultName = project.name;
 
     if (!jobStatus || !jobFinished(jobStatus)) return defaultName;
 
