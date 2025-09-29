@@ -176,6 +176,8 @@ export function useProjects() {
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
+      case 404:
+        return 'Invalid WordPress Base URL';
       case 403:
         return 'Invalid WordPress Token';
       case 500:
@@ -199,6 +201,8 @@ export function useProjects() {
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
+      case 404:
+        return `Please check your WordPress Base URL once again.`;
       case 403:
         return `Please check your WordPress Token or generate a new one.`;
       case 500:

@@ -22,6 +22,7 @@ import AdmZip from 'adm-zip';
 import { errorHasStack } from '../utils';
 import {
   NetworkUnavailableError,
+  WordpressInvalidBaseURLError,
   WordpressInvalidTokenError,
 } from '../entities';
 
@@ -185,6 +186,11 @@ export class ProjectsDeployToWordpressService extends BaseService {
           errorCode: 503,
           errorMessage: 'Network unavailable. Please try again later.',
         });
+      } else if (error instanceof WordpressInvalidBaseURLError) {
+        await this.jobStatusesService.setAsFinished(jobStatus, {
+          errorCode: 404,
+          errorMessage: 'WordPress Base URL is invalid',
+        });
       } else if (error instanceof WordpressInvalidTokenError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
           errorCode: 403,
@@ -217,10 +223,17 @@ export class ProjectsDeployToWordpressService extends BaseService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (
-          ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(error.code ?? '')
+          ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ETIMEDOUT'].includes(
+            error.code ?? '',
+          )
         ) {
           throw new NetworkUnavailableError();
         }
+
+        if (error.response?.status === 404) {
+          throw new WordpressInvalidBaseURLError();
+        }
+
         if (error.response?.status === 401 || error.response?.status === 403) {
           throw new WordpressInvalidTokenError();
         }
