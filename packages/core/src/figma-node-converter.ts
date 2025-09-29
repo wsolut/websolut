@@ -574,6 +574,10 @@ export class FigmaNodeConverter {
       return 'baseline';
     }
 
+    if (!this.nodeAsFrame.counterAxisAlignItems) {
+      return 'flex-start';
+    }
+
     return undefined;
   }
 
@@ -1615,6 +1619,12 @@ export class FigmaNodeConverter {
       return undefined;
     }
 
+    if (this.isRotated() && this.parent)
+      return (
+        this.nodeAsFrame.absoluteBoundingBox.x -
+        this.parent.nodeAsFrame.absoluteBoundingBox.x
+      );
+
     return this.nodeAsFrame.relativeTransform[0][0] === 0
       ? 0
       : this.nodeAsFrame.relativeTransform[0][2];
@@ -2096,6 +2106,12 @@ export class FigmaNodeConverter {
       return undefined;
     }
 
+    if (this.isRotated() && this.parent)
+      return (
+        this.nodeAsFrame.absoluteBoundingBox.y -
+        this.parent.nodeAsFrame.absoluteBoundingBox.y
+      );
+
     return this.nodeAsFrame.relativeTransform[1][1] === 0
       ? 0
       : this.nodeAsFrame.relativeTransform[1][2];
@@ -2140,7 +2156,17 @@ export class FigmaNodeConverter {
     return undefined;
   }
 
-  cssTransform(): string | undefined {
+  isRotated(): boolean {
+    const result = this.transform();
+
+    if (!result) return false;
+
+    if (result > 0) return true;
+
+    return false;
+  }
+
+  transform(): number | undefined {
     // AUTO LAYOUT RULE 2:1
     if (!this.node.rotation || this.node.rotation === 0) return undefined;
 
@@ -2151,7 +2177,15 @@ export class FigmaNodeConverter {
       return undefined;
     }
 
-    return `rotate(${degrees}deg)`;
+    return degrees;
+  }
+
+  cssTransform(): string | undefined {
+    const result = this.transform();
+
+    if (!result) return undefined;
+
+    if (result > 0) return `rotate(${result}deg)`;
 
     return undefined;
   }
