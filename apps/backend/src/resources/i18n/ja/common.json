@@ -7,12 +7,13 @@
     "PERMISSION_DENIED": "[JA] No permission to access the requested resource"
   },
   "VALIDATIONS": {
-    "BLANK": "[JA] must be present",
     "EXPIRED": "[JA] is expired",
+    "REQUIRED": "[JA] is required",
     "INVALID_EMAIL": "[JA] invalid email format",
     "INVALID": "[JA] is invalid",
     "TAKEN": "[JA] already exists",
     "MUST_MATCH": "[JA] must match \"{property}\"",
+    "MAX_LENGTH": "[JA] cannot be longer than {length} characters",
     "MUST_BE_ENABLED": "[JA] must be enabled"
   },
   "RESOURCE": {

@@ -5,13 +5,6 @@
   },
   "VALIDATIONS": {
     "MUST_HAVE_ONE_HOME_PAGE": "Project needs one home page",
-    "TAKEN": "Route already exists"
-  },
-  "FIGMA_URL": {
-    "INVALID":"Figma URL is invalid",
-    "MISSING": "Figma URL is missing",
-    "NODE_ID": {
-      "REQUIRED": "Must contain 'node-id' query parameter"
-    }
+    "NODE_ID_REQUIRED": "Must contain 'node-id' query parameter"
   }
 }

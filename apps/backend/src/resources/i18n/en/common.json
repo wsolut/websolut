@@ -7,8 +7,8 @@
     "PERMISSION_DENIED": "No permission to access the requested resource"
   },
   "VALIDATIONS": {
-    "BLANK": "must be present",
     "EXPIRED": "is expired",
+    "REQUIRED": "is required",
     "INVALID_EMAIL": "invalid email format",
     "INVALID": "is invalid",
     "TAKEN": "already exists",

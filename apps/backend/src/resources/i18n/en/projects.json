@@ -1,9 +1,5 @@
 {
   "ERRORS": {
     "NOT_FOUND": "Project not found"
-  },
-  "VALIDATIONS": {
-    "NOT_WORKING": "Does not seem to be working.",
-    "TAKEN": "Project name already exists"
   }
 }
