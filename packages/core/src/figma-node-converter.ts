@@ -48,8 +48,9 @@ export class FigmaNodeConverter {
   topMostSolidStrokeColor: string | undefined = undefined;
   lastLinearGradientStroke: FigmaTypes.GradientPaint | undefined = undefined;
 
-  domNameFromFigmaNodeName: string | undefined;
-  domxAttributesFromFigmaNodeName!: DomxNodeAttributes;
+  private _domxNodeName: string | undefined;
+  private _domxAttributes: DomxNodeAttributes = {};
+  private _parentDomxAttributes: DomxNodeAttributes = {};
 
   static create<T extends typeof FigmaNodeConverter>(
     this: T,
@@ -169,16 +170,22 @@ export class FigmaNodeConverter {
 
     this.id = sanitizedId(this.node.id);
 
-    this.domxAttributesFromFigmaNodeName = {
-      id: this.id,
-    };
+    this._domxAttributes.id = this.id;
 
     this.parseFigmaNodeName();
 
     this.buildChildren();
   }
 
-  convert(): DomxNode {
+  convert(): DomxNode | undefined {
+    if (this.parent && Object.keys(this._parentDomxAttributes).length > 0) {
+      Object.assign(this.parent?._domxAttributes, this._parentDomxAttributes);
+    }
+
+    if (this.shouldNotBeConverted()) {
+      return undefined;
+    }
+
     return new DomxNode({
       id: this.id,
       name: this.domxNodeName(),
@@ -193,13 +200,28 @@ export class FigmaNodeConverter {
   }
 
   /* getter methods - BEGIN */
-  get domxNode(): DomxNode {
+  get domxNode(): DomxNode | undefined {
     return (this._domxNode ||= this.convert());
   }
   protected _domxNode: DomxNode | undefined;
 
   get rootNode(): boolean {
     return !this.parent;
+  }
+
+  shouldNotHaveChildren() {
+    if (this.nodeType === 'TEXT') return true;
+    if (this.domxNodeName() === 'INPUT') return true;
+
+    return false;
+  }
+
+  shouldNotBeConverted() {
+    if (this.nodeType === 'TEXT' && this._parentDomxAttributes.placeholder) {
+      return true;
+    }
+
+    return false;
   }
 
   nodeIsImgType(): boolean {
@@ -256,11 +278,11 @@ export class FigmaNodeConverter {
     if (this.rootNode) {
       return 'BODY';
     } else if (this.nodeType === 'TEXT') {
-      return this.domNameFromFigmaNodeName || 'P';
+      return this._domxNodeName || 'P';
     } else if (this.nodeIsImgType()) {
-      return this.domNameFromFigmaNodeName || 'IMG';
+      return this._domxNodeName || 'IMG';
     } else {
-      return this.domNameFromFigmaNodeName || 'DIV';
+      return this._domxNodeName || 'DIV';
     }
   }
 
@@ -271,7 +293,7 @@ export class FigmaNodeConverter {
   domxNodeAttributes(): DomxNodeAttributes {
     const attributes: DomxNodeAttributes = {
       id: this.id,
-      ...this.domxAttributesFromFigmaNodeName,
+      ...this._domxAttributes,
     };
 
     if (this.nodeIsImgType()) {
@@ -296,7 +318,11 @@ export class FigmaNodeConverter {
     const childrenIds: string[] = [];
 
     this.children.forEach((childFigmaNodeConverter) => {
-      childrenIds.push(childFigmaNodeConverter.domxNode.id);
+      const childDomxNode = childFigmaNodeConverter.domxNode;
+
+      if (childDomxNode) {
+        childrenIds.push(childDomxNode.id);
+      }
     });
 
     return childrenIds;
@@ -306,6 +332,7 @@ export class FigmaNodeConverter {
     if (this.nodeIsImgType()) {
       // For now let's clear all css style for img's since they are all SVGs
       return {
+        display: this.cssDisplay(),
         bottom: this.cssBottom(),
         left: this.cssLeft(),
         position: this.cssPosition(),
@@ -422,6 +449,8 @@ export class FigmaNodeConverter {
   protected buildChildren(): void {
     this.children = [];
 
+    if (this.shouldNotHaveChildren()) return;
+
     this.nodeChildren.forEach((figmaNodeChild) => {
       const childFigmaNodeConverter = this.buildChild(figmaNodeChild);
 
@@ -440,46 +469,45 @@ export class FigmaNodeConverter {
   protected parseFigmaNodeName(): void {
     const nameParts = this.node.name
       .trim()
-      .split(/(\[.*?\])| /)
+      .split(/(&?\[.*?\])| /)
       .filter((str) => (str ?? '') !== '');
 
     nameParts.forEach((namePart) => {
       if (namePart.startsWith('<') && namePart.endsWith('>')) {
-        this.populateDomNameFromFigmaNodeName(namePart);
+        this.populateDomxNodeNameFromFigmaNodeNamePart(namePart);
+      } else if (namePart.startsWith('&[') && namePart.endsWith(']')) {
+        this.populateParentDomxAttributesFromFigmaNodeNamePart(namePart);
       } else if (namePart.startsWith('[') && namePart.endsWith(']')) {
-        this.populateDomxAttributesFromFigmaNodeName(namePart);
+        this.populateDomxAttributesFromFigmaNodeNamePart(namePart);
       } else if (namePart.startsWith('.')) {
-        this.populateDomxAttributesFromFigmaNodeNameClass(namePart);
+        this.populateDomxAttributesClassFromFigmaNodeNamePart(namePart);
       } else if (namePart.startsWith('#') && namePart.length > 1) {
-        this.domxAttributesFromFigmaNodeName.id = namePart.slice(1);
+        this._domxAttributes.id = namePart.slice(1);
       }
     });
   }
 
-  protected populateDomNameFromFigmaNodeName(namePart: string) {
+  protected populateDomxNodeNameFromFigmaNodeNamePart(namePart: string) {
     const domName = namePart.slice(1, -1);
 
     if (domName !== '') {
-      this.domNameFromFigmaNodeName = domName.toUpperCase();
+      this._domxNodeName = domName.toUpperCase();
     }
   }
 
-  protected populateDomxAttributesFromFigmaNodeNameClass(namePart: string) {
+  protected populateDomxAttributesClassFromFigmaNodeNamePart(namePart: string) {
     let domCssClass = namePart.slice(1);
 
     if (domCssClass.length === 0) return;
 
     domCssClass = domCssClass.split('.').join(' ');
 
-    this.domxAttributesFromFigmaNodeName.class = [
-      this.domxAttributesFromFigmaNodeName.class || '',
-      domCssClass,
-    ]
+    this._domxAttributes.class = [this._domxAttributes.class || '', domCssClass]
       .join(' ')
       .trim();
   }
 
-  protected populateDomxAttributesFromFigmaNodeName(namePart: string) {
+  protected populateDomxAttributesFromFigmaNodeNamePart(namePart: string) {
     const attrDeclaration = namePart.slice(1, -1).trim();
 
     if (attrDeclaration.length === 0) return;
@@ -496,7 +524,36 @@ export class FigmaNodeConverter {
             .replace(/^'|^"|'$|"$/g, '');
 
     if (attributeName) {
-      this.domxAttributesFromFigmaNodeName[attributeName] = attributeValue;
+      this._domxAttributes[attributeName] = attributeValue;
+    }
+  }
+
+  protected populateParentDomxAttributesFromFigmaNodeNamePart(
+    namePart: string,
+  ) {
+    const attrDeclaration = namePart.slice(2, -1).trim();
+
+    if (attrDeclaration.length === 0) return;
+
+    const parts = attrDeclaration.split('=');
+    const attributeName: string = parts[0].trim();
+    let attributeValue: string | undefined = undefined;
+
+    if (parts.length === 1) {
+      attributeValue = parts
+        .slice(1)
+        .join('=')
+        .trim()
+        .replace(/^'|^"|'$|"$/g, '');
+    }
+
+    if (!attributeValue && attributeName === 'placeholder') {
+      attributeValue = this.domxText() || '';
+    }
+
+    if (attributeName) {
+      this._parentDomxAttributes[attributeName] =
+        attributeValue || attributeName;
     }
   }
   /* helper methods - END */
