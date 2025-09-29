@@ -2,6 +2,7 @@ export * from './project.entity';
 export * from './project-serializer.service';
 export * from './projects-deploy-to-vercel.service';
 export * from './projects-export-static-html.service';
+export * from './projects-export-static-html-for-vercel.service';
 export * from './projects.controller';
 export * from './projects.dto';
 export * from './projects.gateway';
