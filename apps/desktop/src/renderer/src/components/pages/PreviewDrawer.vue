@@ -11,7 +11,8 @@ import { Page, Project } from '@/@types';
 import { RequestStatus } from '@/entities';
 import { useProjects } from '@/composables';
 
-const { projectVercelToken, projectVercelName, projectVercelUrl } = useProjects();
+const { projectVercelToken, projectVercelName, projectWordpressToken, projectWordpressBaseUrl } =
+  useProjects();
 
 const emit = defineEmits([
   'toggle-edit-mode',
@@ -33,14 +34,20 @@ const props = defineProps<{
 const page = computed(() => props.page);
 const selectedTab = ref('content');
 const showVercelDeployView = ref(false);
+const showVercelDeploymentStatus = ref(false);
 const showWordpressDeployView = ref(false);
+const showWordpressDeploymentStatus = ref(false);
 const vercelDeploymentRequest = reactive(new RequestStatus());
 const wordpressDeploymentRequest = reactive(new RequestStatus());
 
 function handleDrawerClose() {
   emit('close');
+
   showVercelDeployView.value = false;
   showWordpressDeployView.value = false;
+
+  vercelDeploymentRequest.status = 'idle';
+  wordpressDeploymentRequest.status = 'idle';
 }
 
 async function handleExportToHtml() {
@@ -86,6 +93,13 @@ function handleVercelDeployGoBack() {
 
 function handleWordpressDeployGoBack() {
   showWordpressDeployView.value = false;
+  wordpressDeploymentRequest.status = 'idle';
+}
+function handleResetVercelRequest() {
+  vercelDeploymentRequest.status = 'idle';
+}
+
+function handleResetWordpressRequest() {
   wordpressDeploymentRequest.status = 'idle';
 }
 </script>
@@ -143,24 +157,32 @@ function handleWordpressDeployGoBack() {
         v-if="showVercelDeployView"
         @go-back="handleVercelDeployGoBack"
         @deploy-start="handleDeployToVercel"
+        @dismiss-deployment-status="showVercelDeploymentStatus = false"
+        @reset-deployment-request="handleResetVercelRequest"
         :project="project"
         :deployment-request="vercelDeploymentRequest"
+        :show-deployment-status="showVercelDeploymentStatus"
       />
 
       <DeployToWordpress
         v-if="showWordpressDeployView"
         @go-back="handleWordpressDeployGoBack"
         @deploy-start="handleDeployToWordpress"
+        @dismiss-deployment-status="showWordpressDeploymentStatus = false"
+        @reset-deployment-request="handleResetWordpressRequest"
         :project="project"
         :deployment-request="wordpressDeploymentRequest"
+        :show-deployment-status="showWordpressDeploymentStatus"
       />
 
       <div v-if="!showVercelDeployView && !showWordpressDeployView">
         <PreviewDrawerExportDeployTab
           :deploying-to-vercel="vercelDeploymentRequest.pending"
           :vercel-token="projectVercelToken(project)"
+          :deploying-to-wordpress="wordpressDeploymentRequest.pending"
+          :wordpress-token="projectWordpressToken(project)"
+          :wordpress-base-url="projectWordpressBaseUrl(project)"
           :project-name="projectVercelName(project)"
-          :vercel-deployment-url="projectVercelUrl(project)"
           @export-to-html="handleExportToHtml"
           @export-to-wordpress="handleExportToWordpress"
           @show-vercel-deploy="showVercelDeployView = true"

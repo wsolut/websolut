@@ -66,36 +66,47 @@
       <button
         class="mt-8 rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
         @click="showVercelDeployView = true"
+        :disabled="deployingToVercel"
       >
-        <div class="flex items-center w-full">
-          <Icon icon="simple-icons:vercel" class="text-[32px] mr-4 text-gray-100" />
-          <div class="text-left flex-1">
-            <div class="text-lg font-light">Deploy to Vercel</div>
-            <div class="text-sm font-light text-gray-400">Release your static website</div>
+        <Icon icon="simple-icons:vercel" class="text-[32px] mr-4 text-gray-100 flex-shrink-0" />
+        <div class="text-left flex-1 min-w-0">
+          <div class="text-lg font-light">Deploy to Vercel</div>
+          <div class="text-sm font-light text-gray-400">
+            <span v-if="deployingToVercel">Deploying…</span>
+            <span v-else>Release your static website</span>
           </div>
-          <Icon icon="material-symbols:chevron-right-rounded" class="text-[24px] text-gray-400" />
         </div>
+        <Icon
+          icon="material-symbols:chevron-right-rounded"
+          class="text-[24px] text-gray-400 flex-shrink-0 ml-2"
+        />
       </button>
+
       <!-- Deploy to WordPress -->
       <button
-        class="rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
+        class="mt-8 rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
         @click="showWordpressDeployView = true"
+        :disabled="deployingToWordpress"
       >
-        <div class="flex items-center w-full">
-          <Icon icon="ic:round-wordpress" class="text-[32px] mr-4 text-gray-100" />
-          <div class="text-left flex-1">
-            <div class="text-lg font-light">Deploy to WordPress</div>
-            <div class="text-sm font-light text-gray-400">Release your dynamic website</div>
+        <Icon icon="ic:round-wordpress" class="text-[32px] mr-4 text-gray-100 flex-shrink-0" />
+        <div class="text-left flex-1 min-w-0">
+          <div class="text-lg font-light">Deploy to WordPress</div>
+          <div class="text-sm font-light text-gray-400">
+            <span v-if="deployingToWordpress">Deploying…</span>
+            <span v-else>Release your dynamic website</span>
           </div>
-          <Icon icon="material-symbols:chevron-right-rounded" class="text-[24px] text-gray-400" />
         </div>
+        <Icon
+          icon="material-symbols:chevron-right-rounded"
+          class="text-[24px] text-gray-400 flex-shrink-0 ml-2"
+        />
       </button>
     </div>
   </Drawer>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { backendClient } from '@/utils';
 import { Project } from '@/@types';
 import Drawer from '@/components/common/Drawer.vue';
@@ -117,6 +128,8 @@ const showWordpressDeployView = ref(false);
 const showWordpressDeploymentStatus = ref(false);
 const vercelDeploymentRequest = reactive(new RequestStatus());
 const wordpressDeploymentRequest = reactive(new RequestStatus());
+const deployingToVercel = computed(() => vercelDeploymentRequest.status === 'pending');
+const deployingToWordpress = computed(() => wordpressDeploymentRequest.status === 'pending');
 
 function handleDrawerClose() {
   emit('close');
@@ -143,7 +156,6 @@ function handleDeployToVercel(token: string, projectName: string) {
     .projectsDeploy(props.project.id, 'vercel', { token, projectName })
     .then((response) => {
       vercelDeploymentRequest.status = 'success';
-
       if (response.data) {
         emit('project-updated', response.data || {});
       }
@@ -158,7 +170,6 @@ function handleDeployToWordpress(token: string, baseUrl: string) {
     .projectsDeploy(props.project.id, 'wordpress', { token, baseUrl })
     .then((response) => {
       wordpressDeploymentRequest.status = 'success';
-
       if (response.data) {
         emit('project-updated', response.data || {});
       }
@@ -168,13 +179,11 @@ function handleDeployToWordpress(token: string, baseUrl: string) {
 
 function handleVercelDeployGoBack() {
   showVercelDeployView.value = false;
-
   vercelDeploymentRequest.status = 'idle';
 }
 
 function handleWordpressDeployGoBack() {
   showWordpressDeployView.value = false;
-
   wordpressDeploymentRequest.status = 'idle';
 }
 
