@@ -16,6 +16,8 @@ export class InvalidArgumentError extends BaseError {
 
 export class PermissionDeniedError extends BaseError {}
 
+export class ServiceUnavailableError extends BaseError {}
+
 export class NotFoundError extends BaseError {}
 
 export class TranslationMissingError extends BaseError {}

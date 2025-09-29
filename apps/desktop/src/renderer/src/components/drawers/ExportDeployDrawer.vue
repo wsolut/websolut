@@ -6,22 +6,18 @@
       v-if="showVercelDeployView"
       @go-back="handleVercelDeployGoBack"
       @deploy-start="handleDeployToVercel"
-      @dismiss-deployment-status="showVercelDeploymentStatus = false"
-      @reset-deployment-request="handleResetVercelRequest"
+      @has-unsaved-changes="handleVercelUnsavedChanges"
       :project="project"
       :deployment-request="vercelDeploymentRequest"
-      :show-deployment-status="showVercelDeploymentStatus"
     />
 
     <DeployToWordpress
       v-else-if="showWordpressDeployView"
       @go-back="handleWordpressDeployGoBack"
       @deploy-start="handleDeployToWordpress"
-      @dismiss-deployment-status="showWordpressDeploymentStatus = false"
-      @reset-deployment-request="handleResetWordpressRequest"
+      @has-unsaved-changes="handleWordpressUnsavedChanges"
       :project="project"
       :deployment-request="wordpressDeploymentRequest"
-      :show-deployment-status="showWordpressDeploymentStatus"
     />
 
     <div v-else class="flex flex-col gap-6">
@@ -84,7 +80,7 @@
 
       <!-- Deploy to WordPress -->
       <button
-        class="mt-8 rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
+        class="rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
         @click="showWordpressDeployView = true"
         :disabled="deployingToWordpress"
       >
@@ -102,6 +98,13 @@
         />
       </button>
     </div>
+
+    <!-- Confirmation Modal -->
+    <DrawerConfirmationModal
+      v-if="showUnsavedChangesModal"
+      @confirm="confirmUnsavedChanges"
+      @cancel="cancelUnsavedChanges"
+    />
   </Drawer>
 </template>
 
@@ -114,6 +117,8 @@ import DeployToVercel from '@/components/drawers/DeployToVercel.vue';
 import DeployToWordpress from '@/components/drawers/DeployToWordpress.vue';
 import { Icon } from '@iconify/vue';
 import { RequestStatus } from '@/entities';
+import DrawerConfirmationModal from '../modals/DrawerConfirmationModal.vue';
+import { useToast } from '@/composables';
 
 const emit = defineEmits(['close', 'project-updated']);
 
@@ -122,23 +127,64 @@ const props = defineProps<{
   isOpen: boolean;
 }>();
 
-const showVercelDeployView = ref(false);
-const showVercelDeploymentStatus = ref(false);
-const showWordpressDeployView = ref(false);
-const showWordpressDeploymentStatus = ref(false);
 const vercelDeploymentRequest = reactive(new RequestStatus());
 const wordpressDeploymentRequest = reactive(new RequestStatus());
+
 const deployingToVercel = computed(() => vercelDeploymentRequest.status === 'pending');
 const deployingToWordpress = computed(() => wordpressDeploymentRequest.status === 'pending');
 
-function handleDrawerClose() {
-  emit('close');
+const showUnsavedChangesModal = ref(false);
+const hasVercelUnsavedChanges = ref(false);
+const hasWordpressUnsavedChanges = ref(false);
+const pendingAction = ref<(() => void) | null>(null);
+const showVercelDeployView = ref(false);
+const showWordpressDeployView = ref(false);
 
+const toast = useToast();
+
+function handleDrawerClose() {
+  if (hasVercelUnsavedChanges.value || hasWordpressUnsavedChanges.value) {
+    pendingAction.value = () => {
+      emit('close');
+      resetDrawerState();
+    };
+    showUnsavedChangesModal.value = true;
+    return;
+  }
+
+  emit('close');
+  resetDrawerState();
+}
+
+function resetDrawerState() {
   showVercelDeployView.value = false;
   showWordpressDeployView.value = false;
+  hasVercelUnsavedChanges.value = false;
+  hasWordpressUnsavedChanges.value = false;
 
   vercelDeploymentRequest.status = 'idle';
   wordpressDeploymentRequest.status = 'idle';
+}
+
+function handleVercelUnsavedChanges(hasChanges: boolean) {
+  hasVercelUnsavedChanges.value = hasChanges;
+}
+
+function handleWordpressUnsavedChanges(hasChanges: boolean) {
+  hasWordpressUnsavedChanges.value = hasChanges;
+}
+
+function confirmUnsavedChanges() {
+  showUnsavedChangesModal.value = false;
+  if (pendingAction.value) {
+    pendingAction.value();
+    pendingAction.value = null;
+  }
+}
+
+function cancelUnsavedChanges() {
+  showUnsavedChangesModal.value = false;
+  pendingAction.value = null;
 }
 
 async function handleExportToHtml() {
@@ -156,9 +202,11 @@ function handleDeployToVercel(token: string, projectName: string) {
     .projectsDeploy(props.project.id, 'vercel', { token, projectName })
     .then((response) => {
       vercelDeploymentRequest.status = 'success';
+      hasVercelUnsavedChanges.value = false;
       if (response.data) {
         emit('project-updated', response.data || {});
       }
+      toast.success('Project deployed to Vercel successfully!');
     })
     .catch((error) => vercelDeploymentRequest.parseError(error));
 }
@@ -170,28 +218,42 @@ function handleDeployToWordpress(token: string, baseUrl: string) {
     .projectsDeploy(props.project.id, 'wordpress', { token, baseUrl })
     .then((response) => {
       wordpressDeploymentRequest.status = 'success';
+      hasWordpressUnsavedChanges.value = false;
       if (response.data) {
         emit('project-updated', response.data || {});
       }
+      toast.success('Project deployed to WordPress successfully!');
     })
     .catch((error) => wordpressDeploymentRequest.parseError(error));
 }
 
 function handleVercelDeployGoBack() {
+  if (hasVercelUnsavedChanges.value) {
+    pendingAction.value = () => {
+      showVercelDeployView.value = false;
+      hasVercelUnsavedChanges.value = false;
+      vercelDeploymentRequest.status = 'idle';
+    };
+    showUnsavedChangesModal.value = true;
+    return;
+  }
+
   showVercelDeployView.value = false;
   vercelDeploymentRequest.status = 'idle';
 }
 
 function handleWordpressDeployGoBack() {
+  if (hasWordpressUnsavedChanges.value) {
+    pendingAction.value = () => {
+      showWordpressDeployView.value = false;
+      hasWordpressUnsavedChanges.value = false;
+      wordpressDeploymentRequest.status = 'idle';
+    };
+    showUnsavedChangesModal.value = true;
+    return;
+  }
+
   showWordpressDeployView.value = false;
-  wordpressDeploymentRequest.status = 'idle';
-}
-
-function handleResetVercelRequest() {
-  vercelDeploymentRequest.status = 'idle';
-}
-
-function handleResetWordpressRequest() {
   wordpressDeploymentRequest.status = 'idle';
 }
 </script>

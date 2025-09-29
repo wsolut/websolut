@@ -10,10 +10,19 @@ import * as path from 'path';
 import { ProjectEntity } from './project.entity';
 import { errorHasStack, deployToVercelViaApi } from '../utils';
 import { JobStatusesService } from '../job-statuses';
-import { NetworkUnavailableError, VercelInvalidTokenError } from '../entities';
+import {
+  InvalidArgumentError,
+  NetworkUnavailableError,
+  ServiceUnavailableError,
+  VercelInvalidTokenError,
+} from '../entities';
 
 @Injectable()
 export class ProjectsDeployToVercelService extends BaseService {
+  get i18nNamespace(): string {
+    return 'projects';
+  }
+
   constructor(
     @Inject('CONFIG') readonly config: Config,
     private readonly projectsService: ProjectsService,
@@ -75,15 +84,27 @@ export class ProjectsDeployToVercelService extends BaseService {
       });
     } catch (error: unknown) {
       if (error instanceof NetworkUnavailableError) {
+        const errorMessage = this.langService.t('.ERRORS.NETWORK_UNAVAILABLE');
+
         await this.jobStatusesService.setAsFinished(jobStatus, {
           errorCode: 503,
-          errorMessage: 'Network unavailable. Please try again later.',
+          errorMessage,
         });
+
+        throw new ServiceUnavailableError(errorMessage);
       } else if (error instanceof VercelInvalidTokenError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
-          errorCode: 403,
-          errorMessage: 'Vercel Token is invalid',
+          errorCode: 422,
+          errorMessage: [
+            this.langService.t('.ATTRIBUTES.VERCEL_TOKEN'),
+            this.langService.t('.VALIDATIONS.INVALID'),
+          ].join(' '),
         });
+
+        throw new InvalidArgumentError(
+          this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+          { token: [this.langService.t('.VALIDATIONS.INVALID')] },
+        );
       } else {
         const errorStackTrace = errorHasStack(error) ? error.stack : undefined;
 
@@ -92,6 +113,8 @@ export class ProjectsDeployToVercelService extends BaseService {
           errorMessage: 'Unexpected Error',
           errorStackTrace,
         });
+
+        throw error;
       }
     }
 

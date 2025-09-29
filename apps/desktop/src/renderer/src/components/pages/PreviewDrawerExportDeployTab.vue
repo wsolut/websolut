@@ -77,7 +77,7 @@ defineEmits([
 
     <!-- Deploy to WordPress -->
     <button
-      class="mt-8 rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
+      class="rounded-md border-1 border-[#394147] bg-[#232E36] hover:bg-gray-700 text-gray-100 flex items-center p-4 transition-colors"
       @click="$emit('show-wordpress-deploy')"
       :disabled="deployingToWordpress"
     >

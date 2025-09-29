@@ -2,10 +2,7 @@ import { JobStatus, Project } from '@/@types';
 import { useJobStatuses } from './useJobStatuses';
 import { toKebabCase } from '@/utils';
 
-const DEPLOY_COMPLETE_THRESHOLD = 10000;
-
-const { findJobStatus, jobFinished, jobRunning, jobComplete, jobFailed, jobSuccessful } =
-  useJobStatuses();
+const { findJobStatus, jobFinished, jobRunning, jobFailed, jobSuccessful } = useJobStatuses();
 
 type JobData = {
   token: string;
@@ -94,10 +91,10 @@ export function useProjects() {
     return jobSuccessful(jobStatus);
   }
 
-  function projectDeployToVercelComplete(project: Project): boolean {
+  function projectDeployToVercelFinished(project: Project): boolean {
     const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-vercel');
 
-    return jobComplete(jobStatus, DEPLOY_COMPLETE_THRESHOLD);
+    return jobFinished(jobStatus);
   }
 
   function projectDeployToVercelErrorTitle(project: Project): string {
@@ -106,8 +103,8 @@ export function useProjects() {
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
-      case 403:
-        return 'Invalid Vercel Token';
+      case 422:
+        return '';
       case 500:
         return 'Internal Server Error';
       case 503:
@@ -123,8 +120,8 @@ export function useProjects() {
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
-      case 403:
-        return `Please check your Vercel Token or generate a new one.`;
+      case 422:
+        return '';
       case 500:
         return `Something went wrong on our side. Please try again later.`;
       case 503:
@@ -164,10 +161,16 @@ export function useProjects() {
     return jobRunning(jobStatus);
   }
 
-  function projectDeployToWordpressComplete(project: Project): boolean {
+  function projectDeployToWordpressFinished(project: Project): boolean {
     const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-wordpress');
 
-    return jobComplete(jobStatus, DEPLOY_COMPLETE_THRESHOLD);
+    return jobFinished(jobStatus);
+  }
+
+  function projectDeployToWordpressSuccess(project: Project): boolean {
+    const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-wordpress');
+
+    return jobSuccessful(jobStatus);
   }
 
   function projectDeployToWordpressErrorTitle(project: Project): string {
@@ -176,10 +179,8 @@ export function useProjects() {
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
-      case 404:
-        return 'Invalid WordPress Base URL';
-      case 403:
-        return 'Invalid WordPress Token';
+      case 422:
+        return '';
       case 500:
         return 'Internal Server Error';
       case 503:
@@ -189,22 +190,14 @@ export function useProjects() {
     }
   }
 
-  function projectDeployToWordpressSuccess(project: Project): boolean {
-    const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-wordpress');
-
-    return jobSuccessful(jobStatus);
-  }
-
   function projectDeployToWordpressErrorMessage(project: Project): string {
     const jobStatus = findJobStatus(project.jobStatuses, 'deploy-to-wordpress');
 
     if (!jobFailed(jobStatus)) return '';
 
     switch (jobStatus?.errorCode) {
-      case 404:
-        return `Please check your WordPress Base URL once again.`;
-      case 403:
-        return `Please check your WordPress Token or generate a new one.`;
+      case 422:
+        return '';
       case 500:
         return `Something went wrong on our side. Please try again later.`;
       case 503:
@@ -217,11 +210,11 @@ export function useProjects() {
   return {
     projectAddJobStatus,
     projectDeleteJobStatus,
-    projectDeployToVercelComplete,
+    projectDeployToVercelFinished,
     projectDeployToVercelErrorMessage,
     projectDeployToVercelErrorTitle,
     projectDeployToVercelSuccess,
-    projectDeployToWordpressComplete,
+    projectDeployToWordpressFinished,
     projectFailedDeployToVercel,
     projectIsDeployingToVercel,
     projectIsDeployingToWordpress,

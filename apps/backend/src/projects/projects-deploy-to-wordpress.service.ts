@@ -21,7 +21,9 @@ import axios from 'axios';
 import AdmZip from 'adm-zip';
 import { errorHasStack } from '../utils';
 import {
+  InvalidArgumentError,
   NetworkUnavailableError,
+  ServiceUnavailableError,
   WordpressInvalidBaseURLError,
   WordpressInvalidTokenError,
 } from '../entities';
@@ -124,12 +126,12 @@ export class ProjectsDeployToWordpressService extends BaseService {
         token: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
         baseUrl: z
           .string()
           .trim()
           .url({ message: this.langService.t('.VALIDATIONS.INVALID') })
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
       }),
       input,
     );
@@ -182,20 +184,40 @@ export class ProjectsDeployToWordpressService extends BaseService {
       });
     } catch (error) {
       if (error instanceof NetworkUnavailableError) {
+        const errorMessage = this.langService.t('.ERRORS.NETWORK_UNAVAILABLE');
+
         await this.jobStatusesService.setAsFinished(jobStatus, {
           errorCode: 503,
-          errorMessage: 'Network unavailable. Please try again later.',
+          errorMessage,
         });
+
+        throw new ServiceUnavailableError(errorMessage);
       } else if (error instanceof WordpressInvalidBaseURLError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
-          errorCode: 404,
-          errorMessage: 'WordPress Base URL is invalid',
+          errorCode: 422,
+          errorMessage: [
+            this.langService.t('.ATTRIBUTES.WORDPRESS_BASE_URL'),
+            this.langService.t('.VALIDATIONS.INVALID'),
+          ].join(' '),
         });
+
+        throw new InvalidArgumentError(
+          this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+          { baseUrl: [this.langService.t('.VALIDATIONS.INVALID')] },
+        );
       } else if (error instanceof WordpressInvalidTokenError) {
         await this.jobStatusesService.setAsFinished(jobStatus, {
-          errorCode: 403,
-          errorMessage: 'WordPress Token is invalid',
+          errorCode: 422,
+          errorMessage: [
+            this.langService.t('.ATTRIBUTES.WORDPRESS_TOKEN'),
+            this.langService.t('.VALIDATIONS.INVALID'),
+          ].join(' '),
         });
+
+        throw new InvalidArgumentError(
+          this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+          { token: [this.langService.t('.VALIDATIONS.INVALID')] },
+        );
       } else {
         const errorStackTrace = errorHasStack(error) ? error.stack : undefined;
 
@@ -204,6 +226,8 @@ export class ProjectsDeployToWordpressService extends BaseService {
           errorMessage: 'Unexpected Error',
           errorStackTrace,
         });
+
+        throw error;
       }
     }
     await this.projectsService.refreshJobStatuses(project);
