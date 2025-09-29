@@ -40,7 +40,7 @@ export class ProjectsService extends BaseService {
       name: z
         .string()
         .trim()
-        .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') })
+        .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') })
         .max(NAME_MAX_LENGTH, {
           message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
             length: NAME_MAX_LENGTH,

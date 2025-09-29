@@ -367,8 +367,8 @@ export class PagesService extends BaseService {
       figmaUrl: z
         .string()
         .trim()
-        .min(1, { message: this.langService.t('.FIGMA_URL.MISSING') })
-        .url({ message: this.langService.t('.FIGMA_URL.INVALID') })
+        .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') })
+        .url({ message: this.langService.t('.VALIDATIONS.INVALID') })
         .refine(
           (urlString) => {
             try {
@@ -379,10 +379,14 @@ export class PagesService extends BaseService {
               return false;
             }
           },
-          { message: this.langService.t('.FIGMA_URL.NODE_ID.REQUIRED') },
+          {
+            message: this.langService.t('.VALIDATIONS.NODE_ID_REQUIRED'),
+          },
         ),
       projectId: z.number().int().positive({}),
-      figmaToken: z.string(),
+      figmaToken: z
+        .string()
+        .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
     });
 
     const parsedData = await this.validateOrFail(data, validationSchema);

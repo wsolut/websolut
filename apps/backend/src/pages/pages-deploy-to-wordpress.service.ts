@@ -117,11 +117,11 @@ export class PagesDeployToWordpressService extends BaseService {
         token: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
         baseUrl: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
       }),
       input,
     );

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Config } from '../config';
 import { ProjectsService } from './projects.service';
 import { BaseService } from '../services';
-import { ProjectsExportStaticHtmlService } from './projects-export-static-html.service';
+import { ProjectsExportStaticHtmlForVercelService } from './projects-export-static-html-for-vercel.service';
 import { I18nService } from 'nestjs-i18n';
 import { ProjectDeployDto } from './projects.dto';
 import z from 'zod';
@@ -18,7 +18,7 @@ export class ProjectsDeployToVercelService extends BaseService {
     @Inject('CONFIG') readonly config: Config,
     private readonly projectsService: ProjectsService,
     private readonly jobStatusesService: JobStatusesService,
-    private readonly projectsExportStaticHtmlService: ProjectsExportStaticHtmlService,
+    private readonly projectsExportStaticHtmlForVercelService: ProjectsExportStaticHtmlForVercelService,
     protected readonly i18nService: I18nService,
   ) {
     super(i18nService);
@@ -32,11 +32,11 @@ export class ProjectsDeployToVercelService extends BaseService {
         token: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
         projectName: z
           .string()
           .trim()
-          .min(1, { message: this.langService.t('.VALIDATIONS.BLANK') }),
+          .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
       }),
       input,
     );
@@ -48,7 +48,10 @@ export class ProjectsDeployToVercelService extends BaseService {
       data.projectName,
     );
 
-    await this.projectsExportStaticHtmlService.export(project, outDirPath);
+    await this.projectsExportStaticHtmlForVercelService.export(
+      project,
+      outDirPath,
+    );
 
     const jobStatus = await this.jobStatusesService.upsert(
       project.id,
