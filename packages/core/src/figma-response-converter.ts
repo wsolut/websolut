@@ -62,7 +62,7 @@ export class FigmaResponseConverter {
     allFigmaNodeConverters.forEach((figmaNodeConverter) => {
       const domxNode = figmaNodeConverter.domxNode;
 
-      nodes[domxNode.id] = domxNode;
+      if (domxNode) nodes[domxNode.id] = domxNode;
     });
 
     const title = nodes[bodyId]?.metadata.figmaNode.name || figmaResponse.name;
@@ -99,9 +99,9 @@ export class FigmaResponseConverter {
       figmaNode,
       parentConverter,
     );
-    const assets = nodeConverter.domxNode.assets || {};
-
     nodeConverters.push(nodeConverter);
+
+    const assets = nodeConverter.domxNode?.assets || {};
 
     Object.entries(assets).forEach(([assetId, asset]) => {
       if (asset.format === 'imageRef') {
