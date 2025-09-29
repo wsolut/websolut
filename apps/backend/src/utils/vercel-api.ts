@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createHash } from 'crypto';
-import { NetworkUnavailableError, VercelInvalidTokenError } from '../entities';
+import {
+  NetworkUnavailableError,
+  VercelInvalidTokenError,
+  VercelInvalidProjectNameError,
+} from '../entities';
 
 type FileEntry = {
   file: string; // posix-style relative path in the deployment
@@ -131,12 +135,15 @@ async function uploadMissingFiles(
     });
 
     if (response.error) {
-      throw new NetworkUnavailableError();
+      throw new NetworkUnavailableError(
+        `Network error during file upload: ${response.error}`,
+      );
     }
 
     if (response.status === 401 || response.status === 403) {
-      throw new VercelInvalidTokenError();
+      throw new VercelInvalidTokenError('Invalid token during file upload');
     }
+
     if (!response.ok && response.status !== 409) {
       // 409 means file already exists on Vercel
       const text = await response.raw?.text();
@@ -178,11 +185,27 @@ async function createDeployment(
   });
 
   if (response.error) {
-    throw new NetworkUnavailableError();
+    throw new NetworkUnavailableError(
+      `Network error during deployment creation: ${response.error}`,
+    );
+  }
+
+  if (response.status === 400) {
+    const errorBody = response.body as { error?: { message?: string } };
+    const message = errorBody?.error?.message || 'Bad request';
+    throw new VercelInvalidProjectNameError(`Vercel API error: ${message}`);
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw new VercelInvalidTokenError();
+    const errorBody = response.body as { error?: { message?: string } };
+    const message = errorBody?.error?.message || 'Invalid or expired token';
+    throw new VercelInvalidTokenError(message);
+  }
+
+  if (!response.ok) {
+    const errorBody = response.body as { error?: { message?: string } };
+    const message = errorBody?.error?.message || `HTTP ${response.status}`;
+    throw new Error(`Vercel deployment failed: ${message}`);
   }
 
   // If API replies with missing files (varies across versions), extract them
@@ -221,11 +244,16 @@ async function pollDeploymentReady(
     });
 
     if (response.error) {
-      throw new NetworkUnavailableError();
+      throw new NetworkUnavailableError(
+        `Network error during polling: ${response.error}`,
+      );
     }
 
     if (response.status === 401 || response.status === 403) {
-      throw new VercelInvalidTokenError();
+      const errorBody = response.body as { error?: { message?: string } };
+      const message =
+        errorBody?.error?.message || 'Invalid or expired token during polling';
+      throw new VercelInvalidTokenError(message);
     }
     const b = response.body as {
       url?: string;

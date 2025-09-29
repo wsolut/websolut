@@ -26,6 +26,8 @@ export class PortAlreadyInUseError extends BaseError {}
 
 export class VercelInvalidTokenError extends BaseError {}
 
+export class VercelInvalidProjectNameError extends BaseError {}
+
 export class NetworkUnavailableError extends BaseError {}
 
 export class WordpressInvalidTokenError extends BaseError {}

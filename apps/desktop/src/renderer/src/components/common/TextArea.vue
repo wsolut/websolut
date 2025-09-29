@@ -7,7 +7,7 @@
     </label>
 
     <!-- Textarea container -->
-    <div class="relative">
+    <div class="relative" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
       <div
         class="flex items-start rounded-md transition-colors duration-150 border-1 border-gray-700"
         :class="[
@@ -57,9 +57,8 @@
 
       <!-- Floating bubble for validation errors -->
       <div
-        v-if="errorBubble"
-        class="fade-in absolute right-0 -top-8 z-10 transform transition-opacity duration-500 max-w-[300px]"
-        :id="inputId + '-error'"
+        class="absolute right-0 bottom-full mb-1 z-10 max-w-xs pointer-events-none duration-1000"
+        :class="errorBubble ? 'opacity-100' : 'opacity-0'"
       >
         <div
           class="relative rounded-md bg-red-700 px-2 py-1 text-xs font-semibold text-white break-words"
@@ -129,7 +128,7 @@ const emit = defineEmits(['update:modelValue', 'focus', 'blur', 'input']);
 const inputId = ref(props.id);
 const inputRef = ref<HTMLTextAreaElement>();
 const isFocused = ref(false);
-
+const isHovered = ref(false);
 const inputValue = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),

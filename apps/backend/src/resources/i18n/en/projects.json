@@ -1,5 +1,18 @@
 {
   "ERRORS": {
     "NOT_FOUND": "Project not found"
+  },
+  "VALIDATIONS": {
+    "NOT_WORKING": "Does not seem to be working.",
+    "NAME": {
+      "TAKEN": "Project name already exists",
+      "INVALID": "Project names must be lowercase. They can include letters, digits, and the following characters: '.', '_', '-'. However, they cannot contain the sequence '---'."
+    }
+  },
+  "ATTRIBUTES": {
+    "VERCEL_TOKEN": "Vercel Token",
+    "VERCEL_PROJECT_NAME": "Vercel Project Name",
+    "WORDPRESS_BASE_URL": "WordPress Base URL",
+    "WORDPRESS_TOKEN": "WordPress Token"
   }
 }

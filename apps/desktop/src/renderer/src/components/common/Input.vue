@@ -5,7 +5,7 @@
       <span v-if="required" class="text-red-500 ml-1" aria-label="required">*</span>
     </label>
 
-    <div class="relative">
+    <div class="relative" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
       <div
         class="flex items-center rounded-md transition-colors duration-150 border-1 border-gray-700"
         :class="[
@@ -65,10 +65,12 @@
 
       <!-- Floating bubble for validation errors -->
       <div
-        v-if="errorBubble"
-        class="fade-in absolute right-0 -top-8 z-10 transform transition-opacity duration-500"
+        class="absolute right-0 bottom-full mb-1 z-10 max-w-xs pointer-events-none duration-1000"
+        :class="errorBubble ? 'opacity-100' : 'opacity-0'"
       >
-        <div class="relative rounded-md bg-red-700 px-2 py-1 text-xs font-semibold text-white">
+        <div
+          class="relative rounded-md bg-red-700 px-2 py-1 text-xs font-semibold text-white break-words"
+        >
           {{ errorBubble }}
           <div class="absolute -bottom-1 right-5 h-2 w-2 rotate-45 bg-red-700"></div>
         </div>
@@ -143,6 +145,7 @@ const emit = defineEmits(['update:modelValue', 'action-button-click', 'focus', '
 const inputId = ref(props.id);
 const inputRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
+const isHovered = ref(false);
 const showActionButton = computed(() => (props.actionButtonIcon ?? '') !== '');
 
 console.log('props.actionButtonIcon', props.actionButtonIcon);

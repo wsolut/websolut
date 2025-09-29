@@ -17,7 +17,7 @@ import { ProjectInputDto, ProjectsPaginated } from './projects.dto';
 import { ProjectsGateway } from './projects.gateway';
 import { JobStatusesService } from '../job-statuses';
 
-const NAME_MAX_LENGTH = 50;
+const NAME_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 
 @Injectable()
@@ -45,6 +45,9 @@ export class ProjectsService extends BaseService {
           message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
             length: NAME_MAX_LENGTH,
           }),
+        })
+        .refine((val) => val === '' || /^(?!.*---)[a-z0-9._-]+$/.test(val), {
+          message: this.langService.t('.VALIDATIONS.NAME.INVALID'),
         }),
       description: z
         .string()

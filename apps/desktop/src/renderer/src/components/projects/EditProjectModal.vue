@@ -35,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close', 'updated']);
+const isTagsFocused = ref(false);
 
 const project = ref<Project>({ ...props.project });
 const projectUpdateRequest = reactive(new RequestStatus());
@@ -79,7 +80,6 @@ async function handleAssetsOutDirClick() {
 
 function closeModal() {
   projectUpdateRequest.status = 'idle';
-  projectUpdateRequest.errors = {};
   project.value = { ...props.project };
   emit('close');
 }
@@ -191,7 +191,6 @@ onBeforeUnmount(() => {
                 <Input
                   v-model="project.name"
                   class="w-full text-sm placeholder:text-gray-500 break-words whitespace-pre-wrap"
-                  variant="gray"
                   placeholder="e.g. customer's name"
                   :errors="projectUpdateRequest.errors.name"
                 />
@@ -204,7 +203,6 @@ onBeforeUnmount(() => {
               <div class="flex-1">
                 <TextArea
                   v-model="project.description"
-                  variant="gray"
                   class="w-full text-sm placeholder:text-gray-500 break-words whitespace-pre-wrap max-h-40"
                   placeholder="e.g. Think about form and shape..."
                   :resizeable="false"
@@ -221,7 +219,12 @@ onBeforeUnmount(() => {
               </label>
               <TagsInputRoot
                 v-model="project.tags"
-                class="flex flex-wrap gap-2 items-start border border-[#252a35] rounded-lg p-2 w-full bg-[#0F1519] max-h-24 overflow-y-auto"
+                class="flex flex-wrap gap-2 items-start rounded-lg p-2 w-full bg-[#0F1519] max-h-24 overflow-y-auto transition-colors border-1"
+                :class="{
+                  'border-red-500': projectUpdateRequest.errors.tags?.length,
+                  'border-white': isTagsFocused && !projectUpdateRequest.errors.tags?.length,
+                  'border-[#252a35]': !isTagsFocused && !projectUpdateRequest.errors.tags?.length,
+                }"
               >
                 <TagsInputItem
                   v-for="(tag, index) in project.tags"
@@ -239,6 +242,8 @@ onBeforeUnmount(() => {
                 <TagsInputInput
                   placeholder="e.g. comma separated tags"
                   class="flex-1 min-w-[60px] bg-transparent text-sm px-1 py-1 focus:outline-none placeholder:text-gray-500"
+                  @focus="isTagsFocused = true"
+                  @blur="isTagsFocused = false"
                   @keydown="handleTagInput"
                 />
               </TagsInputRoot>
