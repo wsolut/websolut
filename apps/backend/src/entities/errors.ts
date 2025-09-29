@@ -27,3 +27,5 @@ export class VercelInvalidTokenError extends BaseError {}
 export class NetworkUnavailableError extends BaseError {}
 
 export class WordpressInvalidTokenError extends BaseError {}
+
+export class WordpressInvalidBaseURLError extends BaseError {}
