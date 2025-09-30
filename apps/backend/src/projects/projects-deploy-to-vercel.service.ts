@@ -127,7 +127,7 @@ export class ProjectsDeployToVercelService extends BaseService {
 
         throw new InvalidArgumentError(
           this.langService.t('.ERRORS.INVALID_ARGUMENT'),
-          { token: [this.langService.t('.VALIDATIONS.INVALID')] },
+          { projectName: [this.langService.t('.VALIDATIONS.INVALID')] },
         );
       } else {
         const errorStackTrace = errorHasStack(error) ? error.stack : undefined;
