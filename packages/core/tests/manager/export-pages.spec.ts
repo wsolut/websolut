@@ -135,6 +135,7 @@ describe('Manager#export', () => {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Figma Test Mock</title>
   <link media="all" rel="stylesheet" href="./styles.css"></link>
+
 </head>
 <body id="i01">
   <main id="main-container" class="card">
