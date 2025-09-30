@@ -1,7 +1,7 @@
 import * as FigmaTypes from '@figma/rest-api-spec';
 import { FigmaClient } from './utils';
 import { FigmaNodeConverter } from './figma-node-converter';
-import { DomxDocument, DomxNodes } from './domx';
+import { DomxDocument, DomxNode, DomxNodes } from './domx';
 
 export type AssetsQueueEntry = {
   id: string;
@@ -58,11 +58,34 @@ export class FigmaResponseConverter {
     allFigmaNodeConverters: FigmaNodeConverter[],
   ) {
     const nodes = new DomxNodes();
+    const headNode = this.buildDomxDocumentHead();
+    const fontFamilies = new Set<string>();
+
+    nodes[headNode.id] = headNode;
 
     allFigmaNodeConverters.forEach((figmaNodeConverter) => {
       const domxNode = figmaNodeConverter.domxNode;
+      const nodeStyle = figmaNodeConverter.nodeStyle;
 
-      if (domxNode) nodes[domxNode.id] = domxNode;
+      if (domxNode) {
+        nodes[domxNode.id] = domxNode;
+
+        // Collect font families
+        if (
+          (nodeStyle.fontFamily ?? '') !== '' &&
+          !fontFamilies.has(nodeStyle.fontFamily)
+        ) {
+          fontFamilies.add(nodeStyle.fontFamily);
+
+          const headChildNode = this.buildDomxNodeWithGoogleFont(
+            nodeStyle,
+            `font-link-${fontFamilies.size + Date.now()}`,
+          );
+
+          nodes[headChildNode.id] = headChildNode;
+          headNode.childrenIds.push(headChildNode.id);
+        }
+      }
     });
 
     const title = nodes[bodyId]?.metadata.figmaNode.name || figmaResponse.name;
@@ -77,9 +100,38 @@ export class FigmaResponseConverter {
         },
         figmaNodeId,
       },
-      headId: '-null-',
+      headId: headNode.id,
       bodyId,
       nodes,
+    });
+  }
+
+  protected buildDomxDocumentHead() {
+    return new DomxNode({
+      id: `head-${+Date.now()}`,
+      name: 'HEAD',
+      childrenIds: [],
+    });
+  }
+
+  protected buildDomxNodeWithGoogleFont(
+    nodeStyle: FigmaTypes.TypeStyle,
+    id: string,
+  ) {
+    const escapedFontFamily = encodeURIComponent(nodeStyle.fontFamily);
+
+    let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:wght@${nodeStyle.fontWeight}&display=swap`;
+    // let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:ital,wght@0,100..900;1,100..900&display=swap`;
+
+    if (nodeStyle.fontFamily === 'Baloo 2') {
+      href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:wght@400..800&display=swap`;
+    }
+
+    return new DomxNode({
+      id,
+      name: 'LINK',
+      attributes: { rel: 'stylesheet', href },
+      childrenIds: [],
     });
   }
 
