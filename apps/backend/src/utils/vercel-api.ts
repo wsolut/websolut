@@ -184,50 +184,50 @@ async function createDeployment(
     body: JSON.stringify(payload),
   });
 
-  if (response.error) {
-    throw new NetworkUnavailableError(
-      `Network error during deployment creation: ${response.error}`,
+  const body = response.body as Partial<CreateDeploymentResponse> | undefined;
+
+  if (!response.ok) {
+    if (response.status === 400) {
+      // If API replies with missing files (varies across versions), extract them
+      if (
+        (body?.error?.code === 'missing_files' &&
+          Array.isArray(body?.error?.missing)) ||
+        Array.isArray(body?.error?.missing)
+      ) {
+        return {
+          id: String(body?.id),
+          missing: body?.error?.missing,
+        } as CreateDeploymentResponse;
+      }
+
+      if (body?.error?.code === 'invalid_project_name') {
+        throw new VercelInvalidProjectNameError(
+          body?.error?.message || 'Invalid project name',
+        );
+      }
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new VercelInvalidTokenError(
+        body?.error?.message || 'Invalid or expired token',
+      );
+    }
+
+    if (response.error) {
+      throw new NetworkUnavailableError(
+        `Network error during deployment creation: ${response.error}`,
+      );
+    }
+
+    throw new Error(
+      `Vercel deployment failed: ${body?.error?.message || `HTTP ${response.status}`}`,
     );
   }
 
-  if (response.status === 400) {
-    const errorBody = response.body as { error?: { message?: string } };
-    const message = errorBody?.error?.message || 'Bad request';
-    throw new VercelInvalidProjectNameError(`Vercel API error: ${message}`);
-  }
-
-  if (response.status === 401 || response.status === 403) {
-    const errorBody = response.body as { error?: { message?: string } };
-    const message = errorBody?.error?.message || 'Invalid or expired token';
-    throw new VercelInvalidTokenError(message);
-  }
-
-  if (!response.ok) {
-    const errorBody = response.body as { error?: { message?: string } };
-    const message = errorBody?.error?.message || `HTTP ${response.status}`;
-    throw new Error(`Vercel deployment failed: ${message}`);
-  }
-
-  // If API replies with missing files (varies across versions), extract them
-  const b = response.body as Partial<CreateDeploymentResponse> | undefined;
-  if (b?.error?.code === 'missing_files' && Array.isArray(b?.error?.missing)) {
-    return {
-      id: String(b?.id),
-      missing: b.error.missing,
-    } as CreateDeploymentResponse;
-  }
-  const missing = (b as { missing?: unknown } | undefined)?.missing;
-  if (Array.isArray(missing)) {
-    return {
-      id: String(b?.id),
-      missing,
-    } as CreateDeploymentResponse;
-  }
-
   return {
-    id: String(b?.id),
-    url: b?.url,
-    readyState: b?.readyState,
+    id: String(body?.id),
+    url: body?.url,
+    readyState: body?.readyState,
   } as CreateDeploymentResponse;
 }
 
