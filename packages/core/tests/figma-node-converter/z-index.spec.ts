@@ -3,10 +3,11 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 
 // Helper to create a simple container with two absolutely positioned children
-function makeParentWithChildren(children: any[]) {
+function makeParentWithChildren(children: any[], parentOverrides = {}) {
   const parent = FigmaNodeConverter.create({
     ...FigmaExamples.frame,
     layoutMode: 'VERTICAL',
+    ...parentOverrides,
   });
   const instances = children.map((c) =>
     FigmaNodeConverter.create(
@@ -19,29 +20,62 @@ function makeParentWithChildren(children: any[]) {
 }
 
 describe('NodeWrapper', () => {
-  describe('z-index for positioned nodes', () => {
-    it('assigns z-index based on sibling order for absolute nodes', () => {
+  describe('when parent does not have itemReverseZIndex', () => {
+    it('assigns z-index based on sibling order', () => {
       const { instances } = makeParentWithChildren([
-        { ...FigmaExamples.frame, layoutPositioning: 'ABSOLUTE' },
-        { ...FigmaExamples.frame, layoutPositioning: 'ABSOLUTE' },
-        { ...FigmaExamples.frame }, // not positioned -> no zIndex
-        { ...FigmaExamples.frame, layoutPositioning: 'ABSOLUTE' },
+        {
+          ...FigmaExamples.frame,
+          id: 'child-1',
+          layoutPositioning: 'ABSOLUTE',
+        },
+        {
+          ...FigmaExamples.frame,
+          id: 'child-2',
+          layoutPositioning: 'ABSOLUTE',
+        },
+        { ...FigmaExamples.frame, id: 'child-3' },
+        {
+          ...FigmaExamples.frame,
+          id: 'child-4',
+          layoutPositioning: 'ABSOLUTE',
+        },
       ]);
 
-      expect(instances[0].cssZIndex()).toBe('1');
-      expect(instances[1].cssZIndex()).toBe('2');
-      expect(instances[2].cssZIndex()).toBeUndefined();
-      expect(instances[3].cssZIndex()).toBe('4');
+      expect(instances[0].cssZIndex()).toBe('1000');
+      expect(instances[1].cssZIndex()).toBe('1001');
+      expect(instances[2].cssZIndex()).toBe('1002');
+      expect(instances[3].cssZIndex()).toBe('1003');
     });
+  });
 
-    it('assigns z-index for fixed nodes as well', () => {
-      const { instances } = makeParentWithChildren([
-        { ...FigmaExamples.frame, isFixed: true },
-        { ...FigmaExamples.frame, isFixed: true },
-      ]);
+  describe('when parent does not have itemReverseZIndex', () => {
+    it('assigns z-index based on sibling reverse order', () => {
+      const { instances } = makeParentWithChildren(
+        [
+          {
+            ...FigmaExamples.frame,
+            id: 'child-1',
+            layoutPositioning: 'ABSOLUTE',
+          },
+          {
+            ...FigmaExamples.frame,
+            id: 'child-2',
+            layoutPositioning: 'ABSOLUTE',
+          },
+          { ...FigmaExamples.frame, id: 'child-3' },
+          {
+            ...FigmaExamples.frame,
+            id: 'child-4',
+            layoutPositioning: 'ABSOLUTE',
+          },
+        ],
+        { itemReverseZIndex: true },
+      );
 
-      expect(instances[0].cssZIndex()).toBe('1');
-      expect(instances[1].cssZIndex()).toBe('2');
+      expect(instances[0].cssZIndex()).toBe('1003');
+      expect(instances[1].cssZIndex()).toBe('1002');
+      expect(instances[2].cssZIndex()).toBe('1001');
+      expect(instances[3].cssZIndex()).toBe('1000');
     });
   });
 });

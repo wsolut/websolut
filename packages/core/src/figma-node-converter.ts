@@ -332,12 +332,13 @@ export class FigmaNodeConverter {
     if (this.nodeIsImgType()) {
       // For now let's clear all css style for img's since they are all SVGs
       return {
-        display: this.cssDisplay(),
         bottom: this.cssBottom(),
+        display: this.cssDisplay(),
         left: this.cssLeft(),
         position: this.cssPosition(),
         right: this.cssRight(),
         top: this.cssTop(),
+        zIndex: this.cssZIndex(),
       };
     }
 
@@ -2086,13 +2087,30 @@ export class FigmaNodeConverter {
     return 'stretch';
   }
 
-  cssZIndex(): string | undefined {
-    if (!this.hoveringPosition) return undefined;
+  treeDepth(): number {
+    return this.ancestors.length;
+  }
 
-    const siblings = this.parent?.children || [];
-    const idx = siblings.findIndex((c) => c === this);
-    const z = idx >= 0 ? idx + 1 : 1; // 1-based to avoid 0 edge cases
-    return z.toString();
+  cssZIndex(): string | undefined {
+    if (this.parent) {
+      const siblings = [...this.parent.children];
+
+      if (siblings.length === 0) return undefined;
+
+      if (this.parent.nodeAsFrame.itemReverseZIndex === true) {
+        siblings.reverse();
+      }
+
+      const siblingsIndex = siblings.findIndex(
+        (sibling) => sibling.node.id === this.node.id,
+      );
+
+      const zIndex = this.ancestors.length * 1000 + siblingsIndex;
+
+      return zIndex.toString();
+    }
+
+    return undefined;
   }
 
   cssRowGap(): string | undefined {
