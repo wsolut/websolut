@@ -2,6 +2,8 @@
   const flatDomxNodes = document.nodes;
 
   function renderDomxNode(domxNode, indentLevel = 0) {
+    if (!domxNode) return '';
+
     const tagName = domxNode.name.toLowerCase();
     const attributes = renderDomxNodeAttributes(domxNode.attributes);
     const content = renderDomxNodeContent(domxNode);
@@ -39,6 +41,8 @@
   }
 
   function renderDomxNodeChildren(domxNode, indentLevel = 0) {
+    if (!domxNode) return '';
+
     const children = domxNode.childrenIds.map((childId) => flatDomxNodes[childId]);
 
     return children.map((child) => renderDomxNode(child, indentLevel)).join(`\n`);
