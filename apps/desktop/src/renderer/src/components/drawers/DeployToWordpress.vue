@@ -12,7 +12,6 @@ const {
   projectWordpressToken,
   projectIsDeployingToWordpress,
   projectWordpressUrl,
-  projectDeployToWordpressFinished,
   projectDeployToWordpressErrorMessage,
 } = useProjects();
 
@@ -33,7 +32,6 @@ const initialBaseUrl = ref<string>('');
 const initialToken = ref<string>('');
 
 const latestDeploymentUrl = computed(() => projectWordpressUrl(props.project) || '');
-const deployFinished = computed(() => projectDeployToWordpressFinished(props.project));
 const deployErrorMessage = computed(() => projectDeployToWordpressErrorMessage(props.project));
 const isDeployingGlobally = computed(() => projectIsDeployingToWordpress(props.project));
 const isDeployingLocally = computed(() => {
@@ -112,11 +110,11 @@ function handleLatestDeploymentUrlClick() {
       </div>
 
       <div
-        v-if="deployFinished"
+        v-if="latestDeploymentUrl !== '' || deployErrorMessage !== ''"
         class="rounded-md border-1 border-[#394147] bg-transparent px-4 py-5 mt-8"
       >
         <div class="flex items-start gap-3">
-          <div v-if="deployErrorMessage === ''" class="flex-1">
+          <div v-if="latestDeploymentUrl !== ''" class="flex-1">
             <div class="flex items-center gap-2 mb-2">
               <Icon icon="material-symbols:arrow-upload-ready-rounded" class="text-xl" />
               <h3 class="text-gray-100">Latest Deployment URL</h3>
@@ -132,7 +130,7 @@ function handleLatestDeploymentUrlClick() {
             />
           </div>
 
-          <div v-else class="flex-1">
+          <div v-if="deployErrorMessage !== ''" class="flex-1">
             <div class="flex items-center gap-2 mb-2">
               <Icon icon="material-symbols:error-rounded" class="text-xl text-red-500" />
               <h3 class="text-gray-100">Latest Deploy Failed</h3>

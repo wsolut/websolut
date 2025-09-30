@@ -9,6 +9,7 @@ import {
   ProjectsDeployToVercelService,
   ProjectSerializerService,
   ProjectsExportStaticHtmlService,
+  ProjectsExportStaticHtmlForVercelService,
   ProjectsGateway,
   ProjectsService,
   ProjectsExportWordpressService,
@@ -39,7 +40,7 @@ const controllers = [
   SpaController,
   RootController,
 ];
-const providers: Provider[] = [
+const providers = [
   AsyncJobManagerService,
   JobStatusesGateway,
   JobStatusSerializerService,
@@ -55,11 +56,12 @@ const providers: Provider[] = [
   ProjectsDeployToVercelService,
   ProjectSerializerService,
   ProjectsExportStaticHtmlService,
+  ProjectsExportStaticHtmlForVercelService,
   ProjectsGateway,
   ProjectsService,
   ProjectsExportWordpressService,
   ProjectsDeployToWordpressService,
-];
+] as Provider[];
 
 class AppParentModule {}
 
