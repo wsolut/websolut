@@ -12,7 +12,6 @@ const {
   projectVercelToken,
   projectIsDeployingToVercel,
   projectVercelUrl,
-  projectDeployToVercelFinished,
   projectDeployToVercelErrorMessage,
 } = useProjects();
 
@@ -34,7 +33,6 @@ const initialProjectName = ref<string>('');
 const initialToken = ref<string>('');
 
 const latestDeploymentUrl = computed(() => projectVercelUrl(props.project) || '');
-const deployFinished = computed(() => projectDeployToVercelFinished(props.project));
 const deployErrorMessage = computed(() => projectDeployToVercelErrorMessage(props.project));
 const isDeployingGlobally = computed(() => projectIsDeployingToVercel(props.project));
 const isDeployingLocally = computed(() => {

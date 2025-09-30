@@ -12,7 +12,6 @@ const {
   projectWordpressToken,
   projectIsDeployingToWordpress,
   projectWordpressUrl,
-  projectDeployToWordpressFinished,
   projectDeployToWordpressErrorMessage,
 } = useProjects();
 
@@ -33,7 +32,6 @@ const initialBaseUrl = ref<string>('');
 const initialToken = ref<string>('');
 
 const latestDeploymentUrl = computed(() => projectWordpressUrl(props.project) || '');
-const deployFinished = computed(() => projectDeployToWordpressFinished(props.project));
 const deployErrorMessage = computed(() => projectDeployToWordpressErrorMessage(props.project));
 const isDeployingGlobally = computed(() => projectIsDeployingToWordpress(props.project));
 const isDeployingLocally = computed(() => {
