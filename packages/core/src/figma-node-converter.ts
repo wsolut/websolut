@@ -2093,30 +2093,25 @@ export class FigmaNodeConverter {
     return 'stretch';
   }
 
-  treeDepth(): number {
-    return this.ancestors.length;
-  }
-
   cssZIndex(): string | undefined {
-    if (this.parent) {
-      const siblings = [...this.parent.children];
+    if (!this.parent) return undefined;
+    if (this.parent.children.length === 0) return undefined;
 
-      if (siblings.length === 0) return undefined;
+    const siblings = [...this.parent.children];
 
-      if (this.parent.nodeAsFrame.itemReverseZIndex === true) {
-        siblings.reverse();
-      }
-
-      const siblingsIndex = siblings.findIndex(
-        (sibling) => sibling.node.id === this.node.id,
-      );
-
-      const zIndex = this.ancestors.length * 1000 + siblingsIndex;
-
-      return zIndex.toString();
+    if (this.parent.nodeAsFrame.itemReverseZIndex === true) {
+      siblings.reverse();
+    } else if (!this.hoveringPosition) {
+      return undefined;
     }
 
-    return undefined;
+    const siblingsIndex = siblings.findIndex(
+      (sibling) => sibling.node.id === this.node.id,
+    );
+
+    const zIndex = this.ancestors.length * 1000 + siblingsIndex;
+
+    return zIndex.toString();
   }
 
   cssRowGap(): string | undefined {

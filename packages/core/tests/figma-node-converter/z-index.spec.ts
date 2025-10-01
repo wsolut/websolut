@@ -21,7 +21,7 @@ function makeParentWithChildren(children: any[], parentOverrides = {}) {
 
 describe('NodeWrapper', () => {
   describe('when parent does not have itemReverseZIndex', () => {
-    it('assigns z-index based on sibling order', () => {
+    it('assigns z-index based on sibling order for absolute nodes', () => {
       const { instances } = makeParentWithChildren([
         {
           ...FigmaExamples.frame,
@@ -43,7 +43,7 @@ describe('NodeWrapper', () => {
 
       expect(instances[0].cssZIndex()).toBe('1000');
       expect(instances[1].cssZIndex()).toBe('1001');
-      expect(instances[2].cssZIndex()).toBe('1002');
+      expect(instances[2].cssZIndex()).toBeUndefined();
       expect(instances[3].cssZIndex()).toBe('1003');
     });
   });
