@@ -1,6 +1,6 @@
 {
   "name": "@wsolut/websolut-core",
-  "version": "0.5.3-alpha",
+  "version": "0.6.0-alpha",
   "description": "Utilitary classes to convert Figma Nodes to a JSON format closer to DOM.",
   "license": "MIT",
   "publishConfig": {
@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "dev": "tsx --env-file=.env scripts/dev.ts",
+    "debug": "tsx --env-file=.env scripts/debug.ts",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",

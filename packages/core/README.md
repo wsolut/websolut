@@ -57,7 +57,7 @@ cp .env.example .env
 Then run:
 
 ```bash
-npm run dev
+npm run debug
 ```
 
 Which will generate files to **out** folder using the EJS template files inside the folder **scripts/templates**.

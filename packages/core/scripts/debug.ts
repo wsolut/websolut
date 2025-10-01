@@ -21,7 +21,7 @@ async function main() {
     figmaNodeId,
   });
 
-  await manager.synchronize({ force: true });
+  await manager.synchronize({ force: true, debug: true });
   await manager.downloadPagesAssets();
 
   manager.export({

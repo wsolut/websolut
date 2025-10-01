@@ -62,6 +62,7 @@ export class Manager {
   async synchronize(options?: {
     force?: boolean;
     variant?: string;
+    debug?: boolean;
   }): Promise<void> {
     this.loadData(options?.variant);
 
@@ -74,6 +75,7 @@ export class Manager {
     // Converts "this.figmaResponse" into Page instances
     const domxDocuments = await this.figmaResponseConverter.convert(
       this.figmaResponse,
+      { debug: options?.debug },
     );
 
     this.page = new this.pageClass(domxDocuments[0], {
