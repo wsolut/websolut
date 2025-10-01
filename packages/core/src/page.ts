@@ -174,6 +174,7 @@ export class Page {
       document: this.document,
       beautifyHtml: beautify.html,
       beautifyCss: beautify.css,
+      beautifyJs: beautify.js,
       render: ejs.render,
     };
     const options = { views: [templatesDirPath] };

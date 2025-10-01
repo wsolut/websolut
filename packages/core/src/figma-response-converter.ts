@@ -24,6 +24,7 @@ export class FigmaResponseConverter {
 
   async convert(
     figmaResponse: FigmaTypes.GetFileNodesResponse,
+    options?: { debug?: boolean },
   ): Promise<DomxDocument[]> {
     this.assetsQueue = [];
     this.imageRefQueue = [];
@@ -42,6 +43,7 @@ export class FigmaResponseConverter {
           figmaNodeId,
           figmaNodeConverter.id,
           allFigmaNodeConverters,
+          options,
         );
       },
     );
@@ -56,6 +58,7 @@ export class FigmaResponseConverter {
     figmaNodeId: string,
     bodyId: string,
     allFigmaNodeConverters: FigmaNodeConverter[],
+    options?: { debug?: boolean },
   ) {
     const nodes = new DomxNodes();
     const headNode = this.buildDomxDocumentHead();
@@ -68,7 +71,13 @@ export class FigmaResponseConverter {
       const nodeStyle = figmaNodeConverter.nodeStyle;
 
       if (domxNode) {
-        nodes[domxNode.id] = domxNode;
+        nodes[domxNode.id] = { ...domxNode };
+
+        if (options?.debug) {
+          const figmaNode = { ...figmaNodeConverter.node, children: [] };
+
+          nodes[domxNode.id].metadata.figmaNode = figmaNode;
+        }
 
         // Collect font families
         if (
