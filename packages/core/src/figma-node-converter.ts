@@ -799,7 +799,13 @@ export class FigmaNodeConverter {
       const scaleMode = fill.scaleMode || '';
       if (scaleMode === 'FILL') return 'cover';
       if (scaleMode === 'FIT') return 'contain';
-      if (scaleMode === 'TILE') return 'auto';
+      if (scaleMode === 'TILE') {
+        // 'scalingFactor' is optional so if missing, treat it as 1 (100%)
+        const scalingFactor = fill.scalingFactor || 1;
+        const imageWidth = `${this.id}.assets['${fill.imageRef}'].width`;
+        const imageHeight = `${this.id}.assets['${fill.imageRef}'].height`;
+        return `<%- ${imageWidth}*${scalingFactor} %>px <%- ${imageHeight}*${scalingFactor}%>px`;
+      }
       if (scaleMode === 'STRETCH') return '100% 100%';
       return 'cover';
     });

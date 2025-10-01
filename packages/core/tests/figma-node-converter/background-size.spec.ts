@@ -58,7 +58,9 @@ describe('NodeWrapper', () => {
           },
         ],
       });
-      expect(instance.cssBackgroundSize()).toBe('contain, auto, cover');
+      expect(instance.cssBackgroundSize()).toBe(
+        `contain, <%- i011.assets[''].width*1 %>px <%- i011.assets[''].height*1%>px, cover`,
+      );
     });
   });
 });
