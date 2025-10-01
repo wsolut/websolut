@@ -2,14 +2,7 @@ import * as path from 'path';
 import * as WebsolutCore from '../src';
 
 async function main() {
-  let figmaFileURL = process.env.FIGMA_FILE_URL || '-missing-figma-file-url-';
-  let debugMode = process.argv[3] === 'debug';
-
-  if (process.argv[2] === 'debug') {
-    debugMode = true;
-  } else if ((process.argv[2] ?? '') !== '') {
-    figmaFileURL = process.argv[2];
-  }
+  const figmaFileURL = process.argv[2] || process.env.FIGMA_FILE_URL || '-missing-figma-file-url-';
 
   const figmaToken = process.env.FIGMA_TOKEN;
   if (!figmaToken) {
@@ -28,13 +21,12 @@ async function main() {
     figmaNodeId,
   });
 
-  await manager.synchronize({ force: true, debug: debugMode });
+  await manager.synchronize({ force: true, debug: true });
   await manager.downloadPagesAssets();
-  await manager.getNodeImage();
 
   manager.export({
     outDirPath: path.resolve('./out'),
-    templatesDirPath: path.join(path.dirname(new URL(import.meta.url).pathname), 'templates', debugMode ? 'debug' : 'dev'),
+    templatesDirPath: path.join(path.dirname(new URL(import.meta.url).pathname), 'templates'),
     assetsOutDir: path.resolve('./out/assets'),
   });
 }
