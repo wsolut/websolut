@@ -21,7 +21,7 @@ const emit = defineEmits(['close', 'created']);
 
 // Form state
 const blankPage = computed<PageInputDto>(() => ({
-  figmaToken: props.project.figmaToken,
+  figmaToken: props.project.figmaToken || '',
   projectId: props.project.id,
   homePage: !(props.numOfPages > 0),
   figmaUrl: '',

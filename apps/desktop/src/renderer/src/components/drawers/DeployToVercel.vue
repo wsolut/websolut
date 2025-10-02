@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
@@ -21,26 +21,46 @@ const emit = defineEmits<{
   (e: 'has-unsaved-changes', hasChanges: boolean): void;
 }>();
 
-const props = defineProps<{
-  project: Project;
-  deploymentRequest: RequestStatus;
-}>();
+const props = withDefaults(
+  defineProps<{
+    project: Project;
+    deploymentRequest: RequestStatus;
+    initialToken?: string;
+    initialProjectName?: string;
+  }>(),
+  {
+    initialToken: '',
+    initialProjectName: '',
+  },
+);
 
-const projectName = ref<string>(projectVercelName(props.project));
-const token = ref<string>(projectVercelToken(props.project));
+const projectName = ref<string>('');
+const token = ref<string>('');
 
-const initialProjectName = ref<string>('');
-const initialToken = ref<string>('');
+const getInitialProjectName = () => {
+  return props.initialProjectName || projectVercelName(props.project) || '';
+};
+
+const getInitialToken = () => {
+  return props.initialToken || projectVercelToken(props.project) || '';
+};
+
+const initialProjectNameValue = ref(getInitialProjectName());
+const initialTokenValue = ref(getInitialToken());
+
+projectName.value = initialProjectNameValue.value;
+token.value = initialTokenValue.value;
 
 const latestDeploymentUrl = computed(() => projectVercelUrl(props.project) || '');
 const deployErrorMessage = computed(() => projectDeployToVercelErrorMessage(props.project));
 const isDeployingGlobally = computed(() => projectIsDeployingToVercel(props.project));
-const isDeployingLocally = computed(() => {
-  return props.deploymentRequest?.pending ?? false;
-});
+const isDeployingLocally = computed(() => props.deploymentRequest?.pending ?? false);
 const isDeploying = computed(() => isDeployingLocally.value || isDeployingGlobally.value);
+
 const hasUnsavedChanges = computed<boolean>(() => {
-  return projectName.value !== initialProjectName.value || token.value !== initialToken.value;
+  return (
+    projectName.value !== initialProjectNameValue.value || token.value !== initialTokenValue.value
+  );
 });
 
 watch(
@@ -51,14 +71,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  initialProjectName.value = projectVercelName(props.project);
-  initialToken.value = projectVercelToken(props.project);
-});
-
 function handleSubmitClick() {
-  initialProjectName.value = projectName.value;
-  initialToken.value = token.value;
   emit('deploy-start', token.value, projectName.value);
 }
 
@@ -73,7 +86,6 @@ function handleLatestDeploymentUrlClick() {
 
 <template>
   <div class="flex flex-col gap-6 px-2">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <button
         @click="handleGoBack"
@@ -161,15 +173,15 @@ function handleLatestDeploymentUrlClick() {
         </div>
       </div>
 
-      <!-- Buttons -->
       <div class="flex justify-end gap-6 mt-8">
         <Button @click="handleGoBack" variant="secondary" class="px-4 py-2">Abort</Button>
         <Button
           @click="handleSubmitClick"
           :disabled="isDeploying"
           :class="isDeploying ? 'cursor-not-allowed' : 'cursor-pointer'"
-          >{{ isDeploying ? 'Deploying...' : 'Deploy' }}</Button
         >
+          {{ isDeploying ? 'Deploying...' : 'Deploy' }}
+        </Button>
       </div>
     </div>
   </div>
