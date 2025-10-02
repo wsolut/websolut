@@ -367,26 +367,38 @@ export class PagesService extends BaseService {
       figmaUrl: z
         .string()
         .trim()
-        .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') })
-        .url({ message: this.langService.t('.VALIDATIONS.INVALID') })
-        .refine(
-          (urlString) => {
-            try {
-              const url = new URL(urlString);
-
-              return (url.searchParams.get('node-id') ?? '') !== '';
-            } catch {
-              return false;
-            }
-          },
-          {
-            message: this.langService.t('.VALIDATIONS.NODE_ID_REQUIRED'),
-          },
-        ),
+        .superRefine((val, ctx) => {
+          if (!val) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: this.langService.t('.VALIDATIONS.REQUIRED'),
+            });
+            return;
+          }
+          let parsed: URL;
+          try {
+            parsed = new URL(val);
+          } catch {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: this.langService.t('.VALIDATIONS.INVALID'),
+            });
+            return;
+          }
+          if (!(parsed.searchParams.get('node-id') ?? '')) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: this.langService.t(
+                '.VALIDATIONS.FIGMA_URL.NODE_ID_REQUIRED',
+              ),
+            });
+            return;
+          }
+        }),
       projectId: z.number().int().positive({}),
-      figmaToken: z
-        .string()
-        .min(1, { message: this.langService.t('.VALIDATIONS.REQUIRED') }),
+      figmaToken: z.string().min(1, {
+        message: this.langService.t('.VALIDATIONS.FIGMA_TOKEN.REQUIRED'),
+      }),
     });
 
     const parsedData = await this.validateOrFail(data, validationSchema);
@@ -452,7 +464,7 @@ export class PagesService extends BaseService {
 
     if (!(await this.checkPathUniqueness(data.path, data.projectId, pageId))) {
       result.errors['path'] ||= [];
-      result.errors['path'].push(this.langService.t('.VALIDATIONS.TAKEN'));
+      result.errors['path'].push(this.langService.t('.VALIDATIONS.PATH.TAKEN'));
     }
 
     if (
@@ -461,14 +473,14 @@ export class PagesService extends BaseService {
     ) {
       result.errors['homePage'] ||= [];
       result.errors['homePage'].push(
-        this.langService.t('.VALIDATIONS.MUST_HAVE_ONE_HOME_PAGE'),
+        this.langService.t('.VALIDATIONS.HOME_PAGE.MUST_HAVE_ONE'),
       );
     }
 
     if (!project) {
       result.errors['projectId'] ||= [];
       result.errors['projectId'].push(
-        this.langService.t('.VALIDATIONS.PROJECT_NOT_FOUND'),
+        this.langService.t('projects.ERRORS.NOT_FOUND'),
       );
     }
 

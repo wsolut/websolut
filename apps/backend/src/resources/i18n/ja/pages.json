@@ -4,7 +4,23 @@
     "PREVIEW_NOT_FOUND": "[JA] This Page's preview is not yet available"
   },
   "VALIDATIONS": {
-    "MUST_HAVE_ONE_HOME_PAGE": "[JA] Project needs one home page",
-    "NODE_ID_REQUIRED": "[JA] Must contain 'node-id' query parameter"
+    "FIGMA_URL": {
+      "NODE_ID_REQUIRED": "[JA] Must contain 'node-id' query parameter"
+    },
+    "FIGMA_TOKEN": {
+      "REQUIRED": "[JA] Figma token is required"
+    },
+    "HOME_PAGE": {
+      "MUST_HAVE_ONE": "[JA] Project must contain at least one home page"
+    },
+    "PATH": {
+      "TAKEN": "[JA] Route already exists"
+    }
+  },
+  "ATTRIBUTES": {
+    "FIGMA_URL": "[JA] Figma URL",
+    "FIGMA_TOKEN": "[JA] Figma Token",
+    "PATH": "[JA] Route",
+    "HOME_PAGE": "[JA] Home Page"
   }
 }
