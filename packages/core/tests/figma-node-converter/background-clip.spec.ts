@@ -3,7 +3,7 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 import * as FigmaTypes from '@figma/rest-api-spec';
 
-describe('NodeWrapper', () => {
+describe('FigmaNodeConverter', () => {
   describe('background-clip with backdrop-filter', () => {
     it('should set background-clip to padding-box when BACKGROUND_BLUR is present', () => {
       const instance = FigmaNodeConverter.create({
