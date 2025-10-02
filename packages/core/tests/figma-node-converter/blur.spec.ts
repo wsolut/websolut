@@ -2,7 +2,7 @@ import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 
-describe('NodeWrapper', () => {
+describe('FigmaNodeConverter', () => {
   describe('blurs', () => {
     it('should output filter: blur(px) for LAYER_BLUR', () => {
       const instance = FigmaNodeConverter.create({
