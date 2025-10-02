@@ -444,7 +444,14 @@ export class FigmaNodeConverter {
   protected emulateStrokeAlignOutsideAsOutline(): boolean {
     if (this.useLastLinearGradientStrokeAsBorderImage()) return false;
 
-    return this.nodeAsFrame.strokeAlign === 'OUTSIDE';
+    if (this.nodeAsFrame.strokeAlign === 'OUTSIDE') {
+      return (
+        typeof this.uniformStrokeWeight === 'number' &&
+        this.uniformStrokeWeight > 0
+      );
+    }
+
+    return false;
   }
 
   protected buildChildren(): void {
@@ -1041,10 +1048,32 @@ export class FigmaNodeConverter {
 
     // Provide a border-width when using border-image and no regular border width applies
     if (!borderWidth && this.useLastLinearGradientStrokeAsBorderImage()) {
-      const strokeWeight = this.uniformStrokeWeight;
+      const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
+      const uniformWeight = this.uniformStrokeWeight;
 
-      if (typeof strokeWeight === 'number' && strokeWeight > 0) {
-        borderWidth = this.numberToCssSize(roundFloat(strokeWeight));
+      if (typeof uniformWeight === 'number' && uniformWeight > 0) {
+        // Uniform: single value
+        borderWidth = this.numberToCssSize(roundFloat(uniformWeight));
+      } else if (strokeWeights) {
+        // Non-uniform: top right bottom left
+        const top =
+          strokeWeights.top > 0
+            ? this.numberToCssSize(roundFloat(strokeWeights.top))
+            : '0';
+        const right =
+          strokeWeights.right > 0
+            ? this.numberToCssSize(roundFloat(strokeWeights.right))
+            : '0';
+        const bottom =
+          strokeWeights.bottom > 0
+            ? this.numberToCssSize(roundFloat(strokeWeights.bottom))
+            : '0';
+        const left =
+          strokeWeights.left > 0
+            ? this.numberToCssSize(roundFloat(strokeWeights.left))
+            : '0';
+
+        borderWidth = `${top} ${right} ${bottom} ${left}`;
       }
     }
 
@@ -1121,7 +1150,38 @@ export class FigmaNodeConverter {
     if (this.emulateStrokeAlignInsideAsBoxShadow()) {
       const color = this.topMostSolidStrokeColor;
       const width = this.uniformStrokeWeight;
+      const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
 
+      if (color !== undefined) {
+        if (strokeWeights) {
+          // Top: positive Y offset
+          if (strokeWeights.top > 0) {
+            results.push(
+              `0 ${this.numberToCssSize(roundFloat(strokeWeights.top))} 0 0 ${color} inset`,
+            );
+          }
+          // Right: negative X offset
+          if (strokeWeights.right > 0) {
+            results.push(
+              `${this.numberToCssSize(-roundFloat(strokeWeights.right))} 0 0 0 ${color} inset`,
+            );
+          }
+          // Bottom: negative Y offset
+          if (strokeWeights.bottom > 0) {
+            results.push(
+              `0 ${this.numberToCssSize(-roundFloat(strokeWeights.bottom))} 0 0 ${color} inset`,
+            );
+          }
+          // Left: positive X offset
+          if (strokeWeights.left > 0) {
+            results.push(
+              `${this.numberToCssSize(roundFloat(strokeWeights.left))} 0 0 0 ${color} inset`,
+            );
+          }
+        }
+      }
+
+      // Uniform stroke weight
       if (color && typeof width === 'number' && width > 0) {
         results.push(
           [
@@ -2048,10 +2108,19 @@ export class FigmaNodeConverter {
   }
 
   private useLastLinearGradientStrokeAsBorderImage(): boolean {
-    if (
-      typeof this.uniformStrokeWeight !== 'number' ||
-      this.uniformStrokeWeight <= 0
-    ) {
+    const strokeWeights = this.nodeAsFrame.individualStrokeWeights;
+
+    // Check if we have ANY stroke weight (uniform or individual)
+    const hasStrokeWeight =
+      (typeof this.uniformStrokeWeight === 'number' &&
+        this.uniformStrokeWeight > 0) ||
+      (strokeWeights &&
+        (strokeWeights.top > 0 ||
+          strokeWeights.right > 0 ||
+          strokeWeights.bottom > 0 ||
+          strokeWeights.left > 0));
+
+    if (!hasStrokeWeight) {
       return false;
     }
 
