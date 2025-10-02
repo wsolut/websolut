@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
@@ -21,25 +21,44 @@ const emit = defineEmits<{
   (e: 'has-unsaved-changes', hasChanges: boolean): void;
 }>();
 
-const props = defineProps<{
-  project: Project;
-  deploymentRequest: RequestStatus;
-}>();
+const props = withDefaults(
+  defineProps<{
+    project: Project;
+    deploymentRequest: RequestStatus;
+    initialToken?: string;
+    initialBaseUrl?: string;
+  }>(),
+  {
+    initialToken: '',
+    initialBaseUrl: '',
+  },
+);
 
-const baseUrl = ref<string>(projectWordpressBaseUrl(props.project));
-const token = ref<string>(projectWordpressToken(props.project));
-const initialBaseUrl = ref<string>('');
-const initialToken = ref<string>('');
+const baseUrl = ref<string>('');
+const token = ref<string>('');
+
+const getInitialBaseUrl = () => {
+  return props.initialBaseUrl || projectWordpressBaseUrl(props.project) || '';
+};
+
+const getInitialToken = () => {
+  return props.initialToken || projectWordpressToken(props.project) || '';
+};
+
+const initialBaseUrlValue = ref(getInitialBaseUrl());
+const initialTokenValue = ref(getInitialToken());
+
+baseUrl.value = initialBaseUrlValue.value;
+token.value = initialTokenValue.value;
 
 const latestDeploymentUrl = computed(() => projectWordpressUrl(props.project) || '');
 const deployErrorMessage = computed(() => projectDeployToWordpressErrorMessage(props.project));
 const isDeployingGlobally = computed(() => projectIsDeployingToWordpress(props.project));
-const isDeployingLocally = computed(() => {
-  return props.deploymentRequest?.pending ?? false;
-});
+const isDeployingLocally = computed(() => props.deploymentRequest?.pending ?? false);
 const isDeploying = computed(() => isDeployingLocally.value || isDeployingGlobally.value);
+
 const hasUnsavedChanges = computed<boolean>(() => {
-  return baseUrl.value !== initialBaseUrl.value || token.value !== initialToken.value;
+  return baseUrl.value !== initialBaseUrlValue.value || token.value !== initialTokenValue.value;
 });
 
 watch(
@@ -50,14 +69,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  initialBaseUrl.value = projectWordpressBaseUrl(props.project);
-  initialToken.value = projectWordpressToken(props.project);
-});
-
 function handleSubmitClick() {
-  initialBaseUrl.value = baseUrl.value;
-  initialToken.value = token.value;
   emit('deploy-start', token.value, baseUrl.value);
 }
 
@@ -72,7 +84,6 @@ function handleLatestDeploymentUrlClick() {
 
 <template>
   <div class="flex flex-col px-2">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <button
         @click="handleGoBack"
@@ -158,15 +169,15 @@ function handleLatestDeploymentUrlClick() {
         </div>
       </div>
 
-      <!-- Buttons -->
       <div class="flex justify-end gap-6 mt-8">
         <Button @click="handleGoBack" variant="secondary" class="px-4 py-2">Abort</Button>
         <Button
           @click="handleSubmitClick"
           :disabled="isDeploying"
           :class="isDeploying ? 'cursor-not-allowed' : 'cursor-pointer'"
-          >{{ isDeploying ? 'Deploying...' : 'Deploy' }}</Button
         >
+          {{ isDeploying ? 'Deploying...' : 'Deploy' }}
+        </Button>
       </div>
     </div>
   </div>
