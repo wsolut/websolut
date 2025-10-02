@@ -57,7 +57,15 @@ cp .env.example .env
 Then run:
 
 ```bash
-npm run debug
+npm run dev "<figma file url>"
 ```
 
 Which will generate files to **out** folder using the EJS template files inside the folder **scripts/templates**.
+
+You can also run in debug mode:
+
+```bash
+npm run dev "<figma file url>" debug
+```
+
+Which will generate files to **out** with a sidebar drawer that will present the figma data of a specific html element.
