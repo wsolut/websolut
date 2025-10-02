@@ -1980,6 +1980,10 @@ export class FigmaNodeConverter {
       return 'auto';
     }
 
+    if (this.node.type === 'GROUP') {
+      return 'hidden';
+    }
+
     // For some reason scrollBehavior is always 'SCROLLS' on frames that are not scrollable
     // if (this.nodeAsFrame.scrollBehavior === 'SCROLLS') {
     //   return 'auto';
