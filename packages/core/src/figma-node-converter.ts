@@ -2237,7 +2237,7 @@ export class FigmaNodeConverter {
 
     if (!result) return false;
 
-    if (result > 0) return true;
+    if (result) return Math.abs(result) > 0;
 
     return false;
   }
@@ -2261,7 +2261,7 @@ export class FigmaNodeConverter {
 
     if (!result) return undefined;
 
-    if (result > 0) return `rotate(${result}deg)`;
+    if (result && Math.abs(result) > 0) return `rotate(${result}deg)`;
 
     return undefined;
   }
