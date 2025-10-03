@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { reactive, ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { backendClient } from '@/utils';
 import Button from '@/components/common/Button.vue';
 import Input from '@/components/common/Input.vue';
@@ -73,7 +73,13 @@ const createPage = () => {
     .catch((error) => pageCreateRequest.parseError(error));
 };
 
-onMounted(() => window.addEventListener('keydown', handleKeyDown));
+const figmaUrlInputRef = ref<InstanceType<typeof Input> | null>(null);
+
+onMounted(async () => {
+  window.addEventListener('keydown', handleKeyDown);
+  await nextTick();
+  figmaUrlInputRef.value?.focus();
+});
 onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
 </script>
 
@@ -99,6 +105,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
               Figma URL<span class="text-red-500">*</span>
             </label>
             <Input
+              ref="figmaUrlInputRef"
               v-model="page.figmaUrl"
               placeholder="https://www.figma.com/file/..."
               :errors="pageCreateRequest.errors.figmaUrl"

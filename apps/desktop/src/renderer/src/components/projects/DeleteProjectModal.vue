@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import Button from '@/components/common/Button.vue';
 import Input from '@/components/common/Input.vue';
 
 const emit = defineEmits(['confirm', 'cancel']);
 const inputText = ref('');
+
+const inputRef = ref<InstanceType<typeof Input> | null>(null);
 
 const isValidDelete = computed(() => inputText.value.trim() === 'delete');
 
@@ -13,6 +15,20 @@ const confirmDelete = () => {
     emit('confirm');
   }
 };
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') emit('cancel');
+};
+
+onMounted(async () => {
+  window.addEventListener('keydown', handleKeyDown);
+  await nextTick();
+  inputRef.value?.focus();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>
 
 <template>
@@ -23,6 +39,7 @@ const confirmDelete = () => {
 
       <div class="flex justify-center">
         <Input
+          ref="inputRef"
           v-model="inputText"
           input-type="text"
           :custom-class="'w-3/4 mx-auto text-center'"

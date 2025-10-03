@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <NewProjectModal :open="showModal" @close="showModal = false" @created="fetchProjects" />
+    <NewProjectModal v-if="showModal" @close="showModal = false" @created="fetchProjects" />
     <EditProjectModal
       v-if="showEditModal && selectedProject"
       :project="selectedProject"
