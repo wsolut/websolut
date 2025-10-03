@@ -14,7 +14,7 @@ import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
 import CloseButton from '@/components/common/CloseButton.vue';
 import ErrorsHint from '@/components/common/ErrorsHint.vue';
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { backendClient } from '@/utils';
 import { Page } from '@/@types';
 import { RequestStatus } from '@/entities';
@@ -61,8 +61,12 @@ function updatePage() {
     .catch((error) => pageUpdateRequest.parseError(error));
 }
 
-onMounted(() => {
+const figmaTokenInputRef = ref<InstanceType<typeof Input> | null>(null);
+
+onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown);
+  await nextTick();
+  figmaTokenInputRef.value?.focus();
 });
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown);
@@ -102,6 +106,7 @@ onBeforeUnmount(() => {
                 Figma Token<span class="text-red-500">*</span>
               </label>
               <Input
+                ref="figmaTokenInputRef"
                 v-model="page.figmaToken"
                 placeholder="e.g. figd_123..."
                 :errors="pageUpdateRequest.errors.figmaToken"

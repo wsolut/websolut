@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, onMounted, onBeforeUnmount, ref } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import {
   DialogClose,
   DialogContent,
@@ -148,8 +148,12 @@ const handleTagInput = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
+const projectNameInputRef = ref<InstanceType<typeof Input> | null>(null);
+
+onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown);
+  await nextTick();
+  projectNameInputRef.value?.focus();
 });
 
 onBeforeUnmount(() => {
@@ -189,6 +193,7 @@ onBeforeUnmount(() => {
               <label class="text-sm font-light w-20">Name<span class="text-red-500">*</span></label>
               <div class="flex-1">
                 <Input
+                  ref="projectNameInputRef"
                   v-model="project.name"
                   class="w-full text-sm placeholder:text-gray-500 break-words whitespace-pre-wrap"
                   placeholder="e.g. customer's name"

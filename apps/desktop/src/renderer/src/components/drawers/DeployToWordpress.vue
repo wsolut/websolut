@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
@@ -80,6 +80,13 @@ function handleGoBack() {
 function handleLatestDeploymentUrlClick() {
   window.open(latestDeploymentUrl.value, '_blank');
 }
+
+const baseURLRef = ref<InstanceType<typeof Input> | null>(null);
+
+onMounted(async () => {
+  await nextTick();
+  baseURLRef.value?.focus();
+});
 </script>
 
 <template>
@@ -100,6 +107,7 @@ function handleLatestDeploymentUrlClick() {
     <div>
       <div class="flex flex-col gap-4">
         <Input
+          ref="baseURLRef"
           v-model="baseUrl"
           placeholder="Enter Base URL"
           label="Base URL"
