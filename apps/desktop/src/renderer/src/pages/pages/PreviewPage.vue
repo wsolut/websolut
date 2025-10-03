@@ -45,6 +45,9 @@ import { JobStatus, Page, PageContent, Project } from '@/@types';
 import morphdom from 'morphdom';
 import { usePages, useProjects } from '@/composables';
 import { RequestStatus } from '@/entities';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const {
   pageIsSynchronizing,
@@ -76,6 +79,11 @@ const projectId = computed(() => Number(route.params.projectId));
 const hasUncommittedChanges = computed(() => Object.keys(uncommittedContent.value).length > 0);
 
 onMounted(() => {
+  if (Number.isNaN(projectId)) {
+    void router.push('/projects');
+    return;
+  }
+
   previewFrameEl.addEventListener('load', addPreviewFrameEventListeners);
 
   projectsWsClient.connect();
@@ -358,9 +366,14 @@ function fetchProject() {
 
       if (response.data) {
         project.value = response.data;
+      } else {
+        void router.push('/projects');
       }
     })
-    .catch((error) => projectRequest.parseError(error));
+    .catch((error) => {
+      projectRequest.parseError(error);
+      void router.push('/projects');
+    });
 }
 
 function handlePageChange(newPagePath: string) {

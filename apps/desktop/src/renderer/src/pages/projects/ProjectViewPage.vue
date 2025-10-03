@@ -138,8 +138,12 @@ const projectsWsClient = backendClient.projectsWs();
 const jobStatusWsClient = backendClient.jobStatusesWs();
 
 onMounted(() => {
-  fetchProject();
+  if (Number.isNaN(projectId)) {
+    void router.push('/projects');
+    return;
+  }
 
+  fetchProject();
   fetchPages();
 
   projectsWsClient.connect();
@@ -253,9 +257,14 @@ function fetchProject() {
 
       if (response.data) {
         project.value = response.data;
+      } else {
+        void router.push('/projects');
       }
     })
-    .catch((error) => projectRequest.parseError(error));
+    .catch((error) => {
+      projectRequest.parseError(error);
+      void router.push('/projects');
+    });
 }
 
 function fetchPages() {
