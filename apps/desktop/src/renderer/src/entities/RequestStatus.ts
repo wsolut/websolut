@@ -1,7 +1,13 @@
 import { ApiClientErrors, ApiClientResponse } from '@/@types';
 import { AxiosError } from 'axios';
 
-export type RequestStatuses = 'idle' | 'pending' | 'success' | 'bad_request' | 'error';
+export type RequestStatuses =
+  | 'idle'
+  | 'pending'
+  | 'success'
+  | 'bad_request'
+  | 'not_found'
+  | 'error';
 
 export class RequestStatus {
   $status: RequestStatuses = 'idle';
@@ -31,6 +37,13 @@ export class RequestStatus {
         this.errorMessage = axiosError.response.data.message;
         this.errors = axiosError.response.data.errors || {};
       }
+    } else if (axiosError.status === 404) {
+      this.status = 'not_found';
+
+      if (axiosError.response) {
+        this.errorMessage = axiosError.response?.data?.message || 'Resource not found.';
+        this.errors = axiosError.response.data.errors || {};
+      }
     } else {
       this.status = 'error';
       this.errorMessage = axiosError.message || 'An unexpected error occurred.';
@@ -58,6 +71,10 @@ export class RequestStatus {
 
   get badRequest(): boolean {
     return this.status === 'bad_request';
+  }
+
+  get notFound(): boolean {
+    return this.status === 'not_found';
   }
 
   get error(): boolean {

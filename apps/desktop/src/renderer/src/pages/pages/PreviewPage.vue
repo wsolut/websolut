@@ -1,36 +1,47 @@
 <template>
-  <section v-if="!page" class="text-[#E5E9ED] px-8 py-12 bg-[#0A0D10] min-h-[calc(100vh-64px)]">
-    <div v-if="pageRequest.pending" class="flex justify-center mt-32">
-      <Loader size="xl" />
+  <!-- Loading -->
+  <div v-if="projectRequest.status === 'pending'" class="text-gray-400 text-center mt-20">
+    <Loader size="xl" />
+  </div>
+
+  <!-- Not found -->
+  <ProjectNotFound v-else-if="projectRequest.status === 'not_found'" />
+
+  <!-- Page Preview and floating Buttons -->
+  <div v-else-if="project">
+    <section v-if="!page" class="text-[#E5E9ED] px-8 py-12 bg-[#0A0D10] min-h-[calc(100vh-64px)]">
+      <div v-if="pageRequest.pending" class="flex justify-center mt-32">
+        <Loader size="xl" />
+      </div>
+
+      <div v-else>
+        <p class="text-center">{{ previewNotFoundReason }}</p>
+      </div>
+    </section>
+
+    <div v-if="page">
+      <PreviewFloatingButtons
+        :is-drawer-open="isDrawerOpen"
+        :synchronizing="pageIsSynchronizing(page)"
+        :sync-complete="pageSyncComplete(page)"
+        @toggle-drawer="handleToggleDrawer"
+        @sync="handleSync"
+      />
+
+      <PreviewDrawer
+        :page="page"
+        :is-open="isDrawerOpen"
+        :project="project"
+        :edit-mode="editMode"
+        :has-uncommitted-changes="hasUncommittedChanges"
+        @update-content="handleUpdateContent"
+        @revert-content="handleRevertContent"
+        @toggle-edit-mode="handleToggleEditMode"
+        @sync="handleSync"
+        @close="handleDrawerClose"
+        @project-updated="handleProjectUpdated"
+      />
     </div>
-
-    <div v-else>
-      <p class="text-center">{{ previewNotFoundReason }}</p>
-    </div>
-  </section>
-
-  <div v-if="page && project">
-    <PreviewFloatingButtons
-      :is-drawer-open="isDrawerOpen"
-      :synchronizing="pageIsSynchronizing(page)"
-      :sync-complete="pageSyncComplete(page)"
-      @toggle-drawer="handleToggleDrawer"
-      @sync="handleSync"
-    />
-
-    <PreviewDrawer
-      :page="page"
-      :is-open="isDrawerOpen"
-      :project="project"
-      :edit-mode="editMode"
-      :has-uncommitted-changes="hasUncommittedChanges"
-      @update-content="handleUpdateContent"
-      @revert-content="handleRevertContent"
-      @toggle-edit-mode="handleToggleEditMode"
-      @sync="handleSync"
-      @close="handleDrawerClose"
-      @project-updated="handleProjectUpdated"
-    />
   </div>
 </template>
 
@@ -45,6 +56,7 @@ import { JobStatus, Page, PageContent, Project } from '@/@types';
 import morphdom from 'morphdom';
 import { usePages, useProjects } from '@/composables';
 import { RequestStatus } from '@/entities';
+import ProjectNotFound from '@/components/projects/ProjectNotFound.vue';
 
 const {
   pageIsSynchronizing,
