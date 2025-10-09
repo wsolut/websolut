@@ -31,7 +31,6 @@ export class FigmaNodeConverter {
 
   nodeAsFrame!: FigmaTypes.FrameNode;
   nodeAsText!: FigmaTypes.TextNode;
-  nodeChildren: FigmaTypes.Node[] = [];
   nodeEffects!: FigmaTypes.Effect[];
   nodeEffectsTypeDropShadow: FigmaTypes.DropShadowEffect[];
   nodeExportSettings!: FigmaTypes.ExportSetting[];
@@ -87,8 +86,6 @@ export class FigmaNodeConverter {
     this.nodeAsFrame = node as FigmaTypes.FrameNode;
 
     this.nodeAsText = node as FigmaTypes.TextNode;
-
-    this.nodeChildren = this.nodeAsFrame.children || [];
 
     this.nodeEffects = this.nodeAsFrame.effects || [];
 
@@ -171,6 +168,8 @@ export class FigmaNodeConverter {
         nodeStrokesTypeGradientLinear[nodeStrokesTypeGradientLinear.length - 1];
     }
 
+    this.complementFigmaNode();
+
     this.id = sanitizedId(this.node.id);
 
     this._domxAttributes.id = this.id;
@@ -212,8 +211,19 @@ export class FigmaNodeConverter {
     return !this.parent;
   }
 
+  get nodeChildren(): FigmaTypes.Node[] {
+    this._nodeChildren = this.nodeAsFrame.children || [];
+
+    // Populate figma node children with the ones that might've been built virtually (for TEXT nodes with style overrides)
+    if (this.nodeAsFrame.children === undefined) {
+      this.node['children'] = this._nodeChildren;
+    }
+
+    return this._nodeChildren;
+  }
+  protected _nodeChildren: FigmaTypes.Node[] | undefined;
+
   shouldNotHaveChildren() {
-    if (this.nodeType === 'TEXT') return true;
     if (this.domxNodeName() === 'INPUT') return true;
 
     return false;
@@ -239,6 +249,22 @@ export class FigmaNodeConverter {
     }
   }
 
+  hasHoveringCoordinates(): boolean {
+    if (this.top() !== undefined) return true;
+    if (this.bottom() !== undefined) return true;
+    if (this.left() !== undefined) return true;
+    if (this.right() !== undefined) return true;
+
+    return false;
+  }
+
+  nodeTextHasOverwriteChildren(): boolean {
+    if (this.nodeType !== 'TEXT') return false;
+    if (!this.nodeAsText.characterStyleOverrides) return false;
+
+    return this.nodeChildren.length > 0;
+  }
+
   nodeIsImgType(): boolean {
     return this.nodeIsSvgType();
   }
@@ -253,6 +279,7 @@ export class FigmaNodeConverter {
 
   domxText(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
+    if (this.nodeTextHasOverwriteChildren()) return undefined;
 
     const text = this.nodeAsText.characters || '';
 
@@ -292,7 +319,11 @@ export class FigmaNodeConverter {
   domxNodeName(): string {
     if (this.rootNode) {
       return 'BODY';
+    } else if (this.nodeStyle.hyperlink) {
+      return 'A';
     } else if (this.nodeType === 'TEXT') {
+      if (this.nodeTextHasOverwriteChildren()) return 'DIV';
+
       return this._domxNodeName || 'P';
     } else if (this.nodeIsImgType()) {
       return this._domxNodeName || 'IMG';
@@ -313,6 +344,12 @@ export class FigmaNodeConverter {
 
     if (this.nodeIsImgType()) {
       attributes.src = `<%- ${this.id}.assets['${this.node.id}'].filePath || ${this.id}.assets['${this.node.id}'].url %>`;
+    }
+
+    if (this.nodeStyle.hyperlink?.type === 'URL') {
+      attributes.href = this.nodeStyle.hyperlink.url;
+    } else if (this.nodeStyle.hyperlink?.type === 'NODE') {
+      attributes.href = `#${sanitizedId(this.nodeStyle.hyperlink.nodeID)}`;
     }
 
     return attributes;
@@ -445,6 +482,80 @@ export class FigmaNodeConverter {
   /* getter methods - END */
 
   /* helper methods - BEGIN */
+  protected complementFigmaNode(): void {
+    if (
+      !this.nodeTextHasOverwriteChildren() &&
+      (this.nodeAsText.characterStyleOverrides || []).length > 0
+    ) {
+      this.buildVirtualTextNodeChildren();
+    }
+  }
+
+  protected buildVirtualTextNodeChildren(): void {
+    let lastTextNode: FigmaTypes.TextNode | undefined = undefined;
+    const text = this.domxText() || '';
+    let overwritesIndex = 0;
+
+    for (let textIndex = 0; textIndex < text.length; textIndex++) {
+      const char = text.charAt(textIndex);
+      const styleOverrideId =
+        this.nodeAsText.characterStyleOverrides[textIndex] || 0;
+
+      if (
+        (lastTextNode?.id || '').split('-')[0] !== styleOverrideId.toString() ||
+        char === '\n' ||
+        lastTextNode?.name === '<p>'
+      ) {
+        lastTextNode = this.buildVirtualTextNodeChild(
+          styleOverrideId,
+          overwritesIndex,
+        );
+
+        this.nodeChildren.push(lastTextNode);
+      }
+
+      if (char === '\n') {
+        lastTextNode.name = '<p>';
+      } else {
+        lastTextNode.characters += char === ' ' ? '&nbsp;' : char;
+
+        overwritesIndex++;
+      }
+    }
+  }
+
+  protected buildVirtualTextNodeChild(
+    styleOverrideId: number,
+    index: number,
+  ): FigmaTypes.TextNode {
+    const style = {
+      ...(this.nodeAsText.styleOverrideTable[styleOverrideId] ||
+        this.nodeStyle),
+    };
+    const fills = style.fills || this.nodeFills;
+
+    delete style['fills'];
+
+    return {
+      type: 'TEXT',
+      id: `${styleOverrideId}-virtual-${index}-${this.node.id}`,
+      characters: '',
+      name: '<span>',
+      characterStyleOverrides: [],
+      styleOverrideTable: {},
+      fills,
+      style,
+      scrollBehavior: this.nodeAsText.scrollBehavior,
+      blendMode: this.nodeAsText.blendMode,
+      opacity: this.nodeAsText.opacity,
+      absoluteBoundingBox: null,
+      absoluteRenderBounds: null,
+      effects: this.nodeAsText.effects,
+      lineTypes: [],
+      lineIndentations: [],
+    };
+  }
+
   protected emulateStrokeAlign(): boolean {
     return (
       this.emulateStrokeAlignInsideAsBoxShadow() ||
@@ -1116,8 +1227,6 @@ export class FigmaNodeConverter {
   }
 
   bottom(): number | undefined {
-    if (!this.hoveringPosition) return undefined;
-
     if (this.nodeAsFrame.constraints?.vertical === 'TOP_BOTTOM') {
       return this.top();
     }
@@ -1139,6 +1248,8 @@ export class FigmaNodeConverter {
   }
 
   cssBottom(): string | undefined {
+    if (!this.hoveringPosition) return undefined;
+
     const result = this.bottom();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -1393,7 +1504,7 @@ export class FigmaNodeConverter {
 
     // AUTO LAYOUT RULE 1:1
     if (
-      this.nodeType === 'TEXT' &&
+      !this.nodeTextHasOverwriteChildren() &&
       this.nodeStyle.textAlignVertical !== undefined
     ) {
       return 'flex';
@@ -1668,7 +1779,7 @@ export class FigmaNodeConverter {
   cssWhiteSpace(): csstype.Property.WhiteSpace | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
 
-    const text = this.nodeAsText?.characters || '';
+    const text = this.domxText() || '';
     // Preserve hard line breaks and consecutive spaces
     if (/[\n\r\t]/.test(text) || / {2,}/.test(text)) {
       return 'pre-wrap';
@@ -1769,8 +1880,6 @@ export class FigmaNodeConverter {
   }
 
   left(): number | undefined {
-    if (!this.hoveringPosition) return undefined;
-
     if (this.nodeAsFrame.relativeTransform === undefined) {
       return undefined;
     }
@@ -1790,6 +1899,8 @@ export class FigmaNodeConverter {
   }
 
   cssLeft(): string | undefined {
+    if (!this.hoveringPosition) return undefined;
+
     const result = this.left();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -2096,16 +2207,12 @@ export class FigmaNodeConverter {
       return 'absolute';
     }
 
-    if (this.nodeAsFrame.isFixed) {
-      return 'fixed';
-    }
-
-    if (['SECTION', 'GROUP'].includes(this.parent?.nodeType)) {
-      return 'absolute';
-    }
-
-    if (['NONE', undefined].includes(this.parent?.nodeAsFrame.layoutMode)) {
-      return 'absolute';
+    if (
+      ['SECTION', 'GROUP'].includes(this.parent?.nodeType) ||
+      this.parent?.nodeAsFrame.layoutMode === 'NONE' ||
+      this.parent?.nodeAsFrame.layoutMode === undefined
+    ) {
+      return this.hasHoveringCoordinates() ? 'absolute' : undefined;
     }
 
     if (
@@ -2120,8 +2227,6 @@ export class FigmaNodeConverter {
   }
 
   right(): number | undefined {
-    if (!this.hoveringPosition) return undefined;
-
     if (this.nodeAsFrame.constraints?.horizontal === 'LEFT_RIGHT') {
       return this.left();
     }
@@ -2141,6 +2246,8 @@ export class FigmaNodeConverter {
   }
 
   cssRight(): string | undefined {
+    if (!this.hoveringPosition) return undefined;
+
     const result = this.right();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
@@ -2281,8 +2388,6 @@ export class FigmaNodeConverter {
   }
 
   top(): number | undefined {
-    if (!this.hoveringPosition) return undefined;
-
     if (this.nodeAsFrame.relativeTransform === undefined) {
       return undefined;
     }
@@ -2302,6 +2407,8 @@ export class FigmaNodeConverter {
   }
 
   cssTop(): string | undefined {
+    if (!this.hoveringPosition) return undefined;
+
     const result = this.top();
 
     return typeof result === 'number' ? this.numberToCssSize(result) : result;
