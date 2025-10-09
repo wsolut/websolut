@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 
-describe('FigmaNodeConverter', () => {
+describe('NodeWrapper', () => {
   describe('conic gradients', () => {
     it('should be undefined for single-stop conic gradient', () => {
       const instance = FigmaNodeConverter.create({

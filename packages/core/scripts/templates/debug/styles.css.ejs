@@ -18,7 +18,7 @@ body.json-drawer-open {
   background: rgba(0, 0, 0, 0.4);
   opacity: 0;
   transition: opacity 200ms ease;
-  z-index: 10000; /* below drawer, above app content */
+  z-index: 1000000001; /* below drawer, above app content */
 }
 .json-drawer-overlay.open {
   opacity: 1;
@@ -37,7 +37,7 @@ body.json-drawer-open {
   transition: transform 240ms ease;
   display: flex;
   flex-direction: column;
-  z-index: 10001; /* above overlay */
+  z-index: 1000000002; /* above overlay */
   border-left: 1px solid rgba(255,255,255,0.08);
 }
 .json-drawer.open {
@@ -106,40 +106,39 @@ body.json-drawer-open {
   outline: 2px solid rgba(34, 211, 238, 0.25);
   outline-offset: 2px;
   border-radius: 4px;
-  z-index: 9998; /* below page FAB */
+  z-index: 1000000000; /* below overlay */
 }
 <%
   const flatDomxNodes = document.nodes;
 
-  function renderCssRules(domxNode) {
-    const properties = Object.keys(domxNode.style || {})
+  function renderCssRules(properties) {
+    const rules = Object.keys(properties || {})
       .map((property) => {
-        let value = domxNode.style[property];
+        let rule = properties[property];
 
-        if (typeof value === 'string' && value.match(/%.*%/)) {
-          value = render(value, flatDomxNodes);
+        if (typeof rule === 'object') {
+          rule = renderCssRules(rule);
+
+          return ((rule ?? '') !== '') ? beautifyCss(`&${property} {\n${rule}\n}`, { indent_size: 2 }) : undefined;
         }
 
-        return ((value ?? '') !== '') ? `${kebabCase(property)}: ${value};` : undefined;
-      })
-      .filter((value) => value !== undefined);
+        if (typeof rule === 'string' && rule.match(/%.*%/)) {
+          rule = render(rule, flatDomxNodes);
+        }
 
-    if (properties.length === 0) {
+        return ((rule ?? '') !== '') ? `${property}: ${rule};` : undefined;
+      })
+      .filter((rule) => rule !== undefined);
+
+    if (rules.length === 0) {
       return '';
     }
 
-    return properties.join('\n');
-  }
-
-  function kebabCase(value) {
-    return value
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
-      .replace(/[\s_]+/g, '-')
-      .toLowerCase();
+    return rules.join('\n');
   }
 
   Object.values(flatDomxNodes).forEach((domxNode) => {
-    const cssRules = renderCssRules(domxNode) || '';
+    const cssRules = renderCssRules(domxNode.style || {}) || '';
     const id = domxNode.attributes.id || '';
 
     if (cssRules !== '' && id !== '') {
