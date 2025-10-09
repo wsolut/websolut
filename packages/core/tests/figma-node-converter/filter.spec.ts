@@ -2,7 +2,7 @@ import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 
-describe('FigmaNodeConverter', () => {
+describe('NodeWrapper', () => {
   describe('filter (LAYER_BLUR)', () => {
     it('should output filter: blur(px) for single LAYER_BLUR', () => {
       const instance = FigmaNodeConverter.create({
@@ -11,7 +11,7 @@ describe('FigmaNodeConverter', () => {
       });
       const style = instance.domxNodeStyle();
       expect(style.filter).toBe('blur(12px)');
-      expect(style.WebkitFilter).toBe(style.filter);
+      expect(style['-webkit-filter']).toBe(style.filter);
     });
 
     it('should combine multiple LAYER_BLUR with spaces', () => {
@@ -24,7 +24,7 @@ describe('FigmaNodeConverter', () => {
       });
       const style = instance.domxNodeStyle();
       expect(style.filter).toBe('blur(2px) blur(6px)');
-      expect(style.WebkitFilter).toBe(style.filter);
+      expect(style['-webkit-filter']).toBe(style.filter);
     });
 
     it('should not output filter when no LAYER_BLUR is present', () => {
@@ -34,7 +34,7 @@ describe('FigmaNodeConverter', () => {
       });
       const style = instance.domxNodeStyle();
       expect(style.filter).toBeUndefined();
-      expect(style.WebkitFilter).toBeUndefined();
+      expect(style['-webkit-filter']).toBeUndefined();
     });
   });
 });

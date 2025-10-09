@@ -74,8 +74,8 @@ export type DomxNodeMetadata = {
   figmaNode?: DomxNodeMetadataFigmaNode;
 };
 
-export type DomxNodeStyle = csstype.Properties & {
-  [key: string]: string | undefined;
+export type DomxNodeStyle = csstype.PropertiesHyphen & {
+  [P in csstype.SimplePseudos]?: csstype.PropertiesHyphen;
 };
 
 export class DomxNode {

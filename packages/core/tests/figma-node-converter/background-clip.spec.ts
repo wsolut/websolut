@@ -3,16 +3,16 @@ import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 import * as FigmaTypes from '@figma/rest-api-spec';
 
-describe('FigmaNodeConverter', () => {
-  describe('background-clip with backdrop-filter', () => {
+describe('NodeWrapper', () => {
+  describe('cssBackgroundClip and cssBackdropFilter', () => {
     it('should set background-clip to padding-box when BACKGROUND_BLUR is present', () => {
       const instance = FigmaNodeConverter.create({
         ...FigmaExamples.frame,
         effects: [{ type: 'BACKGROUND_BLUR', visible: true, radius: 10 }],
       });
-      const style = instance.domxNodeStyle();
-      expect(style.backdropFilter).toBe('blur(10px)');
-      expect(style.backgroundClip).toBe('padding-box');
+
+      expect(instance.cssBackdropFilter()).toBe('blur(10px)');
+      expect(instance.cssBackgroundClip()).toBe('padding-box');
     });
 
     it('should not set background-clip when BACKGROUND_BLUR is absent', () => {
@@ -20,9 +20,9 @@ describe('FigmaNodeConverter', () => {
         ...FigmaExamples.frame,
         effects: [],
       });
-      const style = instance.domxNodeStyle();
-      expect(style.backdropFilter).toBeUndefined();
-      expect(style.backgroundClip).toBeUndefined();
+
+      expect(instance.cssBackdropFilter()).toBeUndefined();
+      expect(instance.cssBackgroundClip()).toBeUndefined();
     });
   });
 
@@ -49,8 +49,8 @@ describe('FigmaNodeConverter', () => {
       });
       const style = instance.domxNodeStyle();
 
-      expect(style.backgroundClip).toBe('text');
-      expect(style.WebkitBackgroundClip).toBe('text');
+      expect(instance.cssBackgroundClip()).toBe('text');
+      expect(style['-webkit-background-clip']).toBe('text');
     });
   });
 });

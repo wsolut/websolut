@@ -2,7 +2,7 @@ import { expect, it, describe } from 'vitest';
 import { FigmaNodeConverter } from '../../src/figma-node-converter';
 import * as FigmaExamples from '../support/figma-examples';
 
-describe('FigmaNodeConverter', () => {
+describe('NodeWrapper', () => {
   describe('blurs', () => {
     it('should output filter: blur(px) for LAYER_BLUR', () => {
       const instance = FigmaNodeConverter.create({
@@ -41,10 +41,10 @@ describe('FigmaNodeConverter', () => {
         ],
       });
       const style = instance.domxNodeStyle();
-      expect(style.backdropFilter).toBe('blur(8px)');
-      expect(style.backgroundClip).toBe('padding-box');
+      expect(style['backdrop-filter']).toBe('blur(8px)');
+      expect(style['background-clip']).toBe('padding-box');
       // WebKit prefix should mirror standard property
-      expect(style.WebkitBackdropFilter).toBe(style.backdropFilter);
+      expect(style['-webkit-backdrop-filter']).toBe(style['backdrop-filter']);
     });
 
     it('should combine multiple BACKGROUND_BLUR effects space-separated', () => {
@@ -56,9 +56,9 @@ describe('FigmaNodeConverter', () => {
         ],
       });
       const style = instance.domxNodeStyle();
-      expect(style.backdropFilter).toBe('blur(3px) blur(5px)');
+      expect(style['backdrop-filter']).toBe('blur(3px) blur(5px)');
       // WebKit prefix should mirror standard property
-      expect(style.WebkitBackdropFilter).toBe(style.backdropFilter);
+      expect(style['-webkit-backdrop-filter']).toBe(style['backdrop-filter']);
     });
 
     it('should not output filters when no blur effects', () => {
@@ -68,7 +68,7 @@ describe('FigmaNodeConverter', () => {
       });
       const style = instance.domxNodeStyle();
       expect(style.filter).toBeUndefined();
-      expect(style.backdropFilter).toBeUndefined();
+      expect(style['backdrop-filter']).toBeUndefined();
     });
   });
 });

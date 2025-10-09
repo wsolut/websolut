@@ -5,7 +5,7 @@
     if (!domxNode) return '';
 
     const tagName = domxNode.name.toLowerCase();
-    const attributes = renderDomxNodeAttributes(domxNode);
+    const attributes = renderDomxNodeAttributes(domxNode.attributes);
     const content = renderDomxNodeContent(domxNode);
 
     return beautifyHtml(
@@ -14,20 +14,18 @@
     );
   }
 
-  function renderDomxNodeAttributes(domxNode) {
+  function renderDomxNodeAttributes(attributes) {
     const renderedAttributes = {};
 
-    Object.keys(domxNode.attributes).forEach((key) => {
-      renderedAttributes[key] = render(domxNode.attributes[key], flatDomxNodes);
+    Object.keys(attributes).forEach((key) => {
+      renderedAttributes[key] = render(attributes[key], flatDomxNodes);
     });
-
-    renderedAttributes['data-node-id'] = domxNode.attributes.id;
 
     return Object.entries(renderedAttributes).map(([key, val]) => `${key}="${val}"`).join(' ');
   }
 
-  function renderDomxNodeContent(domxNode, indentLevel = 0) {
-    let content = renderDomxNodeChildren(domxNode, indentLevel);
+  function renderDomxNodeContent(domxNode) {
+    let content = renderDomxNodeChildren(domxNode);
 
     if (domxNode.text) {
       const processedValue = domxNode.text.replace(/\n/g, '<br />');
@@ -59,193 +57,5 @@
   <link media="all" rel="stylesheet" href="./styles.css"></link>
 <%- renderDomxNodeChildren(flatDomxNodes[document.headId], 1) %>
 </head>
-<body <%- renderDomxNodeAttributes(flatDomxNodes[document.bodyId]) %>>
-<%- renderDomxNodeContent(flatDomxNodes[document.bodyId], 1) %>
-
-  <div id="figmaInspectHighlight" class="figma-inspect-highlight" hidden>
-    <button id="figmaInspectFab" class="figma-inspect-fab" type="button" onclick="openDebugDrawerForHighlighted()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><!-- Icon from Material Icon Theme by Material Extensions - https://github.com/material-extensions/vscode-material-icon-theme/blob/main/LICENSE --><path fill="#f4511e" d="M12 4h4v8h-4a4 4 0 0 1-4-4a4 4 0 0 1 4-4"/><path fill="#ff8a65" d="M20 12h-4V4h4a4 4 0 0 1 4 4a4 4 0 0 1-4 4"/><rect width="8" height="8" x="16" y="12" fill="#29b6f6" rx="4" transform="rotate(180 20 16)"/><path fill="#7c4dff" d="M12 12h4v8h-4a4 4 0 0 1-4-4a4 4 0 0 1 4-4"/><path fill="#00e676" d="M12 20h4v4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4"/></svg>
-    </button>
-  </div>
-
-  <div id="jsonDrawerOverlay" class="json-drawer-overlay" hidden onclick="closeDebugDrawer()"></div>
-  <aside id="jsonDrawer" class="json-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="jsonDrawerTitle">
-    <header class="json-drawer__header">
-      <h2 id="jsonDrawerTitle" class="json-drawer__title">Figma DATA</h2>
-      <div class="json-drawer__actions">
-        <button id="jsonDrawerCopy" class="json-drawer__btn" type="button" aria-label="Copy JSON to clipboard" onclick="copyJsonToClipboard();">Copy</button>
-        <button id="jsonDrawerClose" class="json-drawer__btn json-drawer__btn--primary" type="button" aria-label="Close JSON drawer" onclick="closeDebugDrawer()">Close</button>
-      </div>
-    </header>
-    <section class="json-drawer__body" aria-live="polite">
-      <pre id="jsonDrawerContent" class="json-pre" tabindex="0"></pre>
-    </section>
-  </aside>
-
-  <script>
-    (function () {
-      let lastActiveEl = null;
-      let isDebugDrawerOpen = false;
-      let isHighlightOpen = false;
-      let highlightedEl = null;
-
-      const highlightBorderEl = document.getElementById('figmaInspectHighlight');
-      const overlay = document.getElementById('jsonDrawerOverlay');
-      const drawer = document.getElementById('jsonDrawer');
-      const drawerContent = document.getElementById('jsonDrawerContent');
-      const closeBtn = document.getElementById('jsonDrawerClose');
-      const copyBtn = document.getElementById('jsonDrawerCopy');
-
-      function setBodyScrollLocked(locked) {
-        const cssClass = 'json-drawer-open';
-
-        if (locked) {
-          document.body.classList.add(cssClass);
-        } else {
-          document.body.classList.remove(cssClass);
-        }
-      }
-
-      function stringifyData(data) {
-        try {
-          if (typeof data === 'string') {
-            // Try to parse if it's a JSON string; otherwise show raw string
-            try {
-              const parsed = JSON.parse(data);
-              return JSON.stringify(parsed, null, 2);
-            } catch {
-              return data;
-            }
-          }
-          return JSON.stringify(data, null, 2);
-        } catch (e) {
-          return String(data);
-        }
-      }
-
-      function openDebugDrawer(content, opts) {
-        if (isDebugDrawerOpen) return; // idempotent
-
-        isDebugDrawerOpen = true;
-        lastActiveEl = document.activeElement;
-        const text = stringifyData(content);
-        drawerContent.textContent = text;
-
-        overlay.hidden = false;
-        drawer.setAttribute('aria-hidden', 'false');
-        overlay.classList.add('open');
-        drawer.classList.add('open');
-        setBodyScrollLocked(true);
-        // Move focus to close button for accessibility
-        setTimeout(() => closeBtn.focus(), 0);
-      }
-
-      function closeDebugDrawer() {
-        if (!isDebugDrawerOpen) return;
-
-        isDebugDrawerOpen = false;
-        drawer.classList.remove('open');
-        overlay.classList.remove('open');
-        drawer.setAttribute('aria-hidden', 'true');
-        setBodyScrollLocked(false);
-        // Wait for transition end before hiding overlay to avoid flicker
-        const onEnd = () => {
-          overlay.hidden = true;
-          drawer.removeEventListener('transitionend', onEnd);
-        };
-        drawer.addEventListener('transitionend', onEnd);
-        if (lastActiveEl && typeof lastActiveEl.focus === 'function') {
-          setTimeout(() => lastActiveEl.focus(), 0);
-        }
-      }
-
-      async function copyJsonToClipboard() {
-        try {
-          await navigator.clipboard.writeText(drawerContent.textContent || '');
-          copyBtn.textContent = 'Copied';
-          setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
-        } catch {
-          // Fallback: select text
-          const range = document.createRange();
-          range.selectNodeContents(drawerContent);
-          const sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-      }
-
-      function positionUIFor(el) {
-        const r = el.getBoundingClientRect();
-
-        highlightBorderEl.style.display = 'block';
-        highlightBorderEl.style.left = r.left + 'px';
-        highlightBorderEl.style.top = r.top + 'px';
-        highlightBorderEl.style.width = r.width + 'px';
-        highlightBorderEl.style.height = r.height + 'px';
-      }
-
-      function hideUI() {
-        highlightBorderEl.style.display = 'none';
-        highlightedEl = null;
-      }
-
-      function isInDebugUI(target) {
-        return !!(target.closest('#jsonDrawer') || target.closest('#jsonDrawerOverlay') || target.closest('#figmaInspectFab'));
-      }
-
-      function openDebugDrawerForHighlighted() {
-        console.log('FAB clicked', { highlightedEl });
-        if (!highlightedEl) return;
-
-        const nodeId = highlightedEl.dataset.nodeId;
-
-        const data = window.figmaData[nodeId];
-        openDebugDrawer(data ?? { error: 'No data for nodeId', nodeId });
-      };
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          closeDebugDrawer();
-        }
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (isHighlightOpen) return hideUI();
-
-        const target = e.target;
-
-        if (!(target instanceof Element)) return hideUI();
-
-        if (isInDebugUI(target)) return;
-
-        const el = target.closest('[data-node-id]');
-
-        if (!el) return hideUI();
-
-        if (highlightedEl !== el) {
-          highlightedEl = el;
-          positionUIFor(el);
-        } else {
-          positionUIFor(el);
-        }
-      });
-
-      document.addEventListener('scroll', () => { if (highlightedEl) positionUIFor(highlightedEl); }, true);
-      window.addEventListener('resize', () => { if (highlightedEl) positionUIFor(highlightedEl); });
-
-      // Public API
-      window.openDebugDrawer = openDebugDrawer;
-      window.closeDebugDrawer = closeDebugDrawer;
-      window.copyJsonToClipboard = copyJsonToClipboard;
-      window.openDebugDrawerForHighlighted = openDebugDrawerForHighlighted;
-      window.figmaData = <%
-  const figmaData = {};
-  Object.values(flatDomxNodes).forEach((domxNode) => {
-    figmaData[domxNode.attributes.id] = domxNode.metadata.figmaNode;
-  });
--%><%- JSON.stringify(figmaData, null, 2) %>;
-    })();
-  </script>
-</body>
+<%- renderDomxNode(flatDomxNodes[document.bodyId]) %>
 </html>

@@ -28,24 +28,6 @@ describe('FigmaNodeConverter', () => {
     });
   });
 
-  describe("when figma node's name is 'figma &[placeholder]'", () => {
-    it('should set the attribute placehoder to its parent', () => {
-      const parent = FigmaNodeConverter.create({ ...FigmaExamples.canvas });
-      const instance = FigmaNodeConverter.create(
-        {
-          ...FigmaExamples.text,
-          name: '&[placeholder]',
-          characters: 'hello world',
-        },
-        parent,
-      );
-      parent.children.push(instance);
-
-      expect(instance.domxNode).toBeUndefined();
-      expect(parent.domxNodeAttributes()['placeholder']).toEqual('hello world');
-    });
-  });
-
   describe(`when figma node's name is 'figma <frame> #name .w-100.text-danger .bg-warning [checked] [onclick="return false;"]'`, () => {
     it('should infer the domxNodeName and domxNodeAttributes', () => {
       const parent = FigmaNodeConverter.create({ ...FigmaExamples.canvas });

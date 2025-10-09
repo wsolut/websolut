@@ -32,11 +32,15 @@ export class FigmaResponseConverter {
     const domxDocuments: DomxDocument[] = Object.keys(figmaResponse.nodes).map(
       (figmaNodeId) => {
         const allFigmaNodeConverters: FigmaNodeConverter[] = [];
+        const pseudoElements: FigmaNodeConverter[] = [];
 
         const figmaNodeConverter = this.processFigmaNode(
           figmaResponse.nodes[figmaNodeId].document,
           allFigmaNodeConverters,
+          pseudoElements,
         );
+
+        this.convertPseudoElements(allFigmaNodeConverters, pseudoElements);
 
         return this.buildDomxDocument(
           figmaResponse,
@@ -115,6 +119,33 @@ export class FigmaResponseConverter {
     });
   }
 
+  protected convertPseudoElements(
+    allFigmaNodeConverters: FigmaNodeConverter[],
+    pseudoElements: FigmaNodeConverter[],
+  ) {
+    pseudoElements.forEach((pseudoElement) => {
+      let oElSelector = pseudoElement.originatingElementSelector;
+
+      if (!oElSelector) return;
+
+      let originatingElement: FigmaNodeConverter | undefined = undefined;
+
+      if (oElSelector === 'parent') {
+        originatingElement = pseudoElement.parent;
+      } else {
+        oElSelector = oElSelector.slice(1); // Remove leading '#'
+
+        originatingElement = allFigmaNodeConverters.find((converter) => {
+          return converter.domxNode?.attributes.id === oElSelector;
+        });
+      }
+
+      if (!originatingElement) return;
+
+      originatingElement.addPseudoElement(pseudoElement);
+    });
+  }
+
   protected buildDomxDocumentHead() {
     return new DomxNode({
       id: `head-${+Date.now()}`,
@@ -154,6 +185,7 @@ export class FigmaResponseConverter {
   protected processFigmaNode(
     figmaNode: FigmaTypes.Node,
     nodeConverters: FigmaNodeConverter[],
+    pseudoElements: FigmaNodeConverter[],
     parentConverter?: FigmaNodeConverter,
   ): FigmaNodeConverter {
     const nodeConverter = this.buildFigmaNodeConverter(
@@ -161,6 +193,8 @@ export class FigmaResponseConverter {
       parentConverter,
     );
     nodeConverters.push(nodeConverter);
+
+    if (nodeConverter.nodeIsPseudoElement()) pseudoElements.push(nodeConverter);
 
     const assets = nodeConverter.domxNode?.assets || {};
 
@@ -180,7 +214,12 @@ export class FigmaResponseConverter {
       (figmaNode as FigmaTypes.FrameNode).children || [];
 
     figmaNodeChildren.forEach((figmaNodeChild) => {
-      this.processFigmaNode(figmaNodeChild, nodeConverters, nodeConverter);
+      this.processFigmaNode(
+        figmaNodeChild,
+        nodeConverters,
+        pseudoElements,
+        nodeConverter,
+      );
     });
 
     return nodeConverter;

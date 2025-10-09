@@ -47,10 +47,13 @@ export class FigmaNodeConverter {
   topMostSolidStroke: FigmaTypes.SolidPaint | undefined = undefined;
   topMostSolidStrokeColor: string | undefined = undefined;
   lastLinearGradientStroke: FigmaTypes.GradientPaint | undefined = undefined;
+  pseudoElementName: string | undefined;
+  pseudoClassName: string | undefined;
+  originatingElementSelector: string | undefined;
 
   private _domxNodeName: string | undefined;
   private _domxAttributes: DomxNodeAttributes = {};
-  private _parentDomxAttributes: DomxNodeAttributes = {};
+  // private _parentDomxAttributes: DomxNodeAttributes = {};
 
   static create<T extends typeof FigmaNodeConverter>(
     this: T,
@@ -178,9 +181,9 @@ export class FigmaNodeConverter {
   }
 
   convert(): DomxNode | undefined {
-    if (this.parent && Object.keys(this._parentDomxAttributes).length > 0) {
-      Object.assign(this.parent?._domxAttributes, this._parentDomxAttributes);
-    }
+    // if (this.parent && Object.keys(this._parentDomxAttributes).length > 0) {
+    //   Object.assign(this.parent?._domxAttributes, this._parentDomxAttributes);
+    // }
 
     if (this.shouldNotBeConverted()) {
       return undefined;
@@ -217,11 +220,23 @@ export class FigmaNodeConverter {
   }
 
   shouldNotBeConverted() {
-    if (this.nodeType === 'TEXT' && this._parentDomxAttributes.placeholder) {
+    if (this.nodeIsPseudoElement()) {
       return true;
     }
 
     return false;
+  }
+
+  // https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements
+  nodeIsPseudoElement(): boolean {
+    return (this.pseudoElementName ?? '') !== '';
+  }
+
+  addPseudoElement(pseudoElement: FigmaNodeConverter) {
+    if (pseudoElement.pseudoElementName === 'placeholder') {
+      this.domxNode.attributes.placeholder = pseudoElement.domxText();
+      this.domxNode.style['::placeholder'] = pseudoElement.domxNodeStyle();
+    }
   }
 
   nodeIsImgType(): boolean {
@@ -329,99 +344,101 @@ export class FigmaNodeConverter {
   }
 
   domxNodeStyle(): DomxNodeStyle {
+    let properties: DomxNodeStyle = {};
+
     if (this.nodeIsImgType()) {
       // For now let's clear all css style for img's since they are all SVGs
-      return {
+      properties = {
+        'z-index': this.cssZIndex(),
         bottom: this.cssBottom(),
         display: this.cssDisplay(),
         left: this.cssLeft(),
         position: this.cssPosition(),
         right: this.cssRight(),
         top: this.cssTop(),
-        zIndex: this.cssZIndex(),
+      };
+    } else {
+      properties = {
+        '-webkit-backdrop-filter': this.cssBackdropFilter(),
+        '-webkit-background-clip': this.cssWebkitBackgroundClip(),
+        '-webkit-filter': this.cssFilter(),
+        '-webkit-text-fill-color': this.cssWebkitTextFillColor(),
+        'align-content': this.cssAlignContent(),
+        'align-items': this.cssAlignItems(),
+        'align-self': this.cssAlignSelf(),
+        'backdrop-filter': this.cssBackdropFilter(),
+        'background-blend-mode': this.cssBackgroundBlendMode(),
+        'background-clip': this.cssBackgroundClip(),
+        'background-color': this.cssBackgroundColor(),
+        'background-image': this.cssBackgroundImage(),
+        'background-position': this.cssBackgroundPosition(),
+        'background-repeat': this.cssBackgroundRepeat(),
+        'background-size': this.cssBackgroundSize(),
+        'border-bottom-width': this.cssBorderBottomWidth(),
+        'border-color': this.cssBorderColor(),
+        'border-image-repeat': this.cssBorderImageRepeat(),
+        'border-image-slice': this.cssBorderImageSlice(),
+        'border-image-source': this.cssBorderImageSource(),
+        'border-left-width': this.cssBorderLeftWidth(),
+        'border-radius': this.cssBorderRadius(),
+        'border-right-width': this.cssBorderRightWidth(),
+        'border-style': this.cssBorderStyle(),
+        'border-top-width': this.cssBorderTopWidth(),
+        'border-width': this.cssBorderWidth(),
+        'box-shadow': this.cssBoxShadow(),
+        'column-gap': this.cssColumnGap(),
+        'flex-direction': this.cssFlexDirection(),
+        'flex-wrap': this.cssFlexWrap(),
+        'font-family': this.cssFontFamily(),
+        'font-size': this.cssFontSize(),
+        'font-style': this.cssFontStyle(),
+        'font-variant-caps': this.cssFontVariantCaps(),
+        'font-weight': this.cssFontWeight(),
+        'grid-auto-flow': this.cssGridAutoFlow(),
+        'grid-template-columns': this.cssGridTemplateColumns(),
+        'grid-template-rows': this.cssGridTemplateRows(),
+        'justify-content': this.cssJustifyContent(),
+        'letter-spacing': this.cssLetterSpacing(),
+        'line-height': this.cssLineHeight(),
+        'margin-bottom': this.cssMarginBottom(),
+        'max-height': this.cssMaxHeight(),
+        'max-width': this.cssMaxWidth(),
+        'min-height': this.cssMinHeight(),
+        'min-width': this.cssMinWidth(),
+        'mix-blend-mode': this.cssMixBlendMode(),
+        'padding-bottom': this.cssPaddingBottom(),
+        'padding-left': this.cssPaddingLeft(),
+        'padding-right': this.cssPaddingRight(),
+        'padding-top': this.cssPaddingTop(),
+        'place-content': this.cssPlaceContent(),
+        'place-items': this.cssPlaceItems(),
+        'row-gap': this.cssRowGap(),
+        'text-align': this.cssTextAlign(),
+        'text-decoration': this.cssTextDecoration(),
+        'text-shadow': this.cssTextShadow(),
+        'text-transform': this.cssTextTransform(),
+        'transform-origin': this.cssTransformOrigin(),
+        'white-space': this.cssWhiteSpace(),
+        'writing-mode': this.cssWritingMode(),
+        'z-index': this.cssZIndex(),
+        bottom: this.cssBottom(),
+        color: this.cssColor(),
+        display: this.cssDisplay(),
+        filter: this.cssFilter(),
+        flex: this.cssFlex(),
+        gap: this.cssGap(),
+        height: this.cssHeight(),
+        left: this.cssLeft(),
+        opacity: this.cssOpacity(),
+        outline: this.cssOutline(),
+        overflow: this.cssOverflow(),
+        position: this.cssPosition(),
+        right: this.cssRight(),
+        top: this.cssTop(),
+        transform: this.cssTransform(),
+        width: this.cssWidth(),
       };
     }
-
-    const properties: DomxNodeStyle = {
-      alignContent: this.cssAlignContent(),
-      alignItems: this.cssAlignItems(),
-      alignSelf: this.cssAlignSelf(),
-      backdropFilter: this.cssBackdropFilter(),
-      backgroundBlendMode: this.cssBackgroundBlendMode(),
-      backgroundClip: this.cssBackgroundClip(),
-      backgroundColor: this.cssBackgroundColor(),
-      backgroundImage: this.cssBackgroundImage(),
-      backgroundPosition: this.cssBackgroundPosition(),
-      backgroundRepeat: this.cssBackgroundRepeat(),
-      backgroundSize: this.cssBackgroundSize(),
-      borderBottomWidth: this.cssBorderBottomWidth(),
-      borderColor: this.cssBorderColor(),
-      borderImageRepeat: this.cssBorderImageRepeat(),
-      borderImageSlice: this.cssBorderImageSlice(),
-      borderImageSource: this.cssBorderImageSource(),
-      borderLeftWidth: this.cssBorderLeftWidth(),
-      borderRadius: this.cssBorderRadius(),
-      borderRightWidth: this.cssBorderRightWidth(),
-      borderStyle: this.cssBorderStyle(),
-      borderTopWidth: this.cssBorderTopWidth(),
-      borderWidth: this.cssBorderWidth(),
-      bottom: this.cssBottom(),
-      boxShadow: this.cssBoxShadow(),
-      color: this.cssColor(),
-      columnGap: this.cssColumnGap(),
-      display: this.cssDisplay(),
-      filter: this.cssFilter(),
-      flex: this.cssFlex(),
-      flexDirection: this.cssFlexDirection(),
-      flexWrap: this.cssFlexWrap(),
-      fontFamily: this.cssFontFamily(),
-      fontSize: this.cssFontSize(),
-      fontStyle: this.cssFontStyle(),
-      fontVariantCaps: this.cssFontVariantCaps(),
-      fontWeight: this.cssFontWeight(),
-      gap: this.cssGap(),
-      gridAutoFlow: this.cssGridAutoFlow(),
-      gridTemplateColumns: this.cssGridTemplateColumns(),
-      gridTemplateRows: this.cssGridTemplateRows(),
-      height: this.cssHeight(),
-      justifyContent: this.cssJustifyContent(),
-      left: this.cssLeft(),
-      letterSpacing: this.cssLetterSpacing(),
-      lineHeight: this.cssLineHeight(),
-      marginBottom: this.cssMarginBottom(),
-      maxHeight: this.cssMaxHeight(),
-      maxWidth: this.cssMaxWidth(),
-      minHeight: this.cssMinHeight(),
-      minWidth: this.cssMinWidth(),
-      mixBlendMode: this.cssMixBlendMode(),
-      opacity: this.cssOpacity(),
-      outline: this.cssOutline(),
-      overflow: this.cssOverflow(),
-      paddingBottom: this.cssPaddingBottom(),
-      paddingLeft: this.cssPaddingLeft(),
-      paddingRight: this.cssPaddingRight(),
-      paddingTop: this.cssPaddingTop(),
-      placeContent: this.cssPlaceContent(),
-      placeItems: this.cssPlaceItems(),
-      position: this.cssPosition(),
-      right: this.cssRight(),
-      rowGap: this.cssRowGap(),
-      textAlign: this.cssTextAlign(),
-      textDecoration: this.cssTextDecoration(),
-      textShadow: this.cssTextShadow(),
-      textTransform: this.cssTextTransform(),
-      top: this.cssTop(),
-      transform: this.cssTransform(),
-      transformOrigin: this.cssTransformOrigin(),
-      WebkitBackdropFilter: this.cssBackdropFilter(),
-      WebkitBackgroundClip: this.cssWebkitBackgroundClip(),
-      WebkitFilter: this.cssFilter(),
-      WebkitTextFillColor: this.cssWebkitTextFillColor(),
-      whiteSpace: this.cssWhiteSpace(),
-      width: this.cssWidth(),
-      writingMode: this.cssWritingMode(),
-      zIndex: this.cssZIndex(),
-    };
 
     return properties;
   }
@@ -477,20 +494,38 @@ export class FigmaNodeConverter {
   protected parseFigmaNodeName(): void {
     const nameParts = this.node.name
       .trim()
-      .split(/(&?\[.*?\])| /)
+      .split(/(\[.*?\])| /)
       .filter((str) => (str ?? '') !== '');
 
     nameParts.forEach((namePart) => {
       if (namePart.startsWith('<') && namePart.endsWith('>')) {
         this.populateDomxNodeNameFromFigmaNodeNamePart(namePart);
-      } else if (namePart.startsWith('&[') && namePart.endsWith(']')) {
-        this.populateParentDomxAttributesFromFigmaNodeNamePart(namePart);
       } else if (namePart.startsWith('[') && namePart.endsWith(']')) {
         this.populateDomxAttributesFromFigmaNodeNamePart(namePart);
       } else if (namePart.startsWith('.')) {
         this.populateDomxAttributesClassFromFigmaNodeNamePart(namePart);
-      } else if (namePart.startsWith('#') && namePart.length > 1) {
+      } else if (
+        namePart.startsWith('#') &&
+        namePart.length > 1 &&
+        !namePart.includes(':')
+      ) {
         this._domxAttributes.id = namePart.slice(1);
+      } else {
+        const found = namePart.match(
+          /^(?<oe>parent!|#.*!)(?<cl>:[^:]+)?(?<el>::.*)?/,
+        );
+
+        if (found) {
+          if (found.groups.cl) {
+            this.pseudoClassName = found.groups.cl.slice(1);
+          }
+          if (found.groups.el) {
+            this.pseudoElementName = found.groups.el.slice(2);
+          }
+          if (found.groups.oe) {
+            this.originatingElementSelector = found.groups.oe.slice(0, -1);
+          }
+        }
       }
     });
   }
@@ -536,34 +571,34 @@ export class FigmaNodeConverter {
     }
   }
 
-  protected populateParentDomxAttributesFromFigmaNodeNamePart(
-    namePart: string,
-  ) {
-    const attrDeclaration = namePart.slice(2, -1).trim();
+  // protected populateParentDomxAttributesFromFigmaNodeNamePart(
+  //   namePart: string,
+  // ) {
+  //   const attrDeclaration = namePart.slice(2, -1).trim();
 
-    if (attrDeclaration.length === 0) return;
+  //   if (attrDeclaration.length === 0) return;
 
-    const parts = attrDeclaration.split('=');
-    const attributeName: string = parts[0].trim();
-    let attributeValue: string | undefined = undefined;
+  //   const parts = attrDeclaration.split('=');
+  //   const attributeName: string = parts[0].trim();
+  //   let attributeValue: string | undefined = undefined;
 
-    if (parts.length === 1) {
-      attributeValue = parts
-        .slice(1)
-        .join('=')
-        .trim()
-        .replace(/^'|^"|'$|"$/g, '');
-    }
+  //   if (parts.length === 1) {
+  //     attributeValue = parts
+  //       .slice(1)
+  //       .join('=')
+  //       .trim()
+  //       .replace(/^'|^"|'$|"$/g, '');
+  //   }
 
-    if (!attributeValue && attributeName === 'placeholder') {
-      attributeValue = this.domxText() || '';
-    }
+  //   if (!attributeValue && attributeName === 'placeholder') {
+  //     attributeValue = this.domxText() || '';
+  //   }
 
-    if (attributeName) {
-      this._parentDomxAttributes[attributeName] =
-        attributeValue || attributeName;
-    }
-  }
+  //   if (attributeName) {
+  //     this._parentDomxAttributes[attributeName] =
+  //       attributeValue || attributeName;
+  //   }
+  // }
   /* helper methods - END */
 
   /* CSS methods - BEGIN */
