@@ -20,7 +20,7 @@ import { ProjectEntity } from '../projects/project.entity';
 import { PagesGateway } from './pages.gateway';
 import * as WebsolutCore from '@wsolut/websolut-core';
 import { JobStatusesService } from '../job-statuses';
-import { sanitizedRoute, sanitizedFileName } from '../utils';
+import { sanitizedRoute } from '../utils';
 
 const MAX_UNIQUE_PATH_ATTEMPTS = 100;
 
@@ -169,22 +169,7 @@ export class PagesService extends BaseService {
   }
 
   async create(data: PageCreateInputDto): Promise<PageEntity> {
-    let sanitizedPath = sanitizedFileName(data.path);
-
-    if (!data.homePage && (data.path ?? '') === '') {
-      sanitizedPath = await this.generateUniquePathFor(
-        sanitizedPath,
-        data.projectId,
-      );
-    }
-
-    data.path = sanitizedPath;
-
     const parsedData = await this.createValidateOrFail(data);
-
-    if (parsedData.homePage) {
-      parsedData.lastKnownRoute = sanitizedPath;
-    }
 
     const page = new PageEntity({
       ...parsedData,
@@ -197,18 +182,6 @@ export class PagesService extends BaseService {
   }
 
   async update(id: number, data: PageUpdateInputDto): Promise<PageEntity> {
-    let sanitizedPath = sanitizedFileName(data.path);
-
-    if (!data.homePage && (data.path ?? '') === '') {
-      sanitizedPath = await this.generateUniquePathFor(
-        sanitizedPath,
-        data.projectId,
-        id,
-      );
-    }
-
-    data.path = sanitizedPath;
-
     const page = await this.fetchOne({ where: { id } });
 
     const parsedData = await this.updateValidateOrFail(data, id);
@@ -290,6 +263,7 @@ export class PagesService extends BaseService {
       page.path = await this.generateUniquePathFor(
         sanitizedRoute(page.figmaNodeName),
         page.projectId,
+        page.id,
       );
     }
 
@@ -321,34 +295,32 @@ export class PagesService extends BaseService {
     projectId: number,
     pageId?: number,
   ): Promise<string> {
-    let index = await this.pagesRepository.count({
-      where: {
-        project: { id: projectId },
-      },
-    });
+    const basePath = uniquePath;
+    let index = 0;
+    let attempts = 0;
 
     while (true) {
+      const candidatePath = index === 0 ? basePath : `${basePath}-${index}`;
+
       const isUnique = await this.checkPathUniqueness(
-        uniquePath,
+        candidatePath,
         projectId,
         pageId,
       );
 
       if (isUnique) {
-        break;
+        return candidatePath;
       }
 
       index++;
-      uniquePath = `page${index}\0`;
+      attempts++;
 
-      if (index === MAX_UNIQUE_PATH_ATTEMPTS) {
+      if (attempts >= MAX_UNIQUE_PATH_ATTEMPTS) {
         throw new Error(
           'Unable to generate a unique path after maximum attempts',
         );
       }
     }
-
-    return uniquePath;
   }
 
   private async createValidateOrFail(
@@ -362,7 +334,8 @@ export class PagesService extends BaseService {
           message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
             length: PATH_MAX_LENGTH,
           }),
-        }),
+        })
+        .transform((val) => sanitizedRoute(val)),
       homePage: z.boolean(),
       figmaUrl: z
         .string()
@@ -392,13 +365,20 @@ export class PagesService extends BaseService {
                 '.VALIDATIONS.FIGMA_URL.NODE_ID_REQUIRED',
               ),
             });
-            return;
           }
         }),
-      projectId: z.number().int().positive({}),
-      figmaToken: z.string().min(1, {
-        message: this.langService.t('.VALIDATIONS.FIGMA_TOKEN.REQUIRED'),
-      }),
+      projectId: z
+        .number()
+        .int()
+        .positive({
+          message: this.langService.t('.VALIDATIONS.REQUIRED'),
+        }),
+      figmaToken: z
+        .string()
+        .trim()
+        .min(1, {
+          message: this.langService.t('.VALIDATIONS.FIGMA_TOKEN.REQUIRED'),
+        }),
     });
 
     const parsedData = await this.validateOrFail(data, validationSchema);
@@ -423,7 +403,8 @@ export class PagesService extends BaseService {
           message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
             length: PATH_MAX_LENGTH,
           }),
-        }),
+        })
+        .transform((val) => sanitizedRoute(val)),
       homePage: z.boolean(),
       projectId: z.number().int().positive({}),
       figmaToken: z.string(),
@@ -460,9 +441,27 @@ export class PagesService extends BaseService {
       });
 
     const result = this.validateSchema(validationSchema, data);
+
+    if (!project) {
+      result.errors['projectId'] ||= [];
+      result.errors['projectId'].push(
+        this.langService.t('projects.ERRORS.NOT_FOUND'),
+      );
+    }
+
+    if (Object.keys(result.errors).length) {
+      throw new InvalidArgumentError(
+        this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+        result.errors,
+      );
+    }
+
     const parsedData = result.data as PageEntity;
 
-    if (!(await this.checkPathUniqueness(data.path, data.projectId, pageId))) {
+    if (
+      parsedData.path !== '' &&
+      !(await this.checkPathUniqueness(parsedData.path, data.projectId, pageId))
+    ) {
       result.errors['path'] ||= [];
       result.errors['path'].push(this.langService.t('.VALIDATIONS.PATH.TAKEN'));
     }
@@ -474,13 +473,6 @@ export class PagesService extends BaseService {
       result.errors['homePage'] ||= [];
       result.errors['homePage'].push(
         this.langService.t('.VALIDATIONS.HOME_PAGE.MUST_HAVE_ONE'),
-      );
-    }
-
-    if (!project) {
-      result.errors['projectId'] ||= [];
-      result.errors['projectId'].push(
-        this.langService.t('projects.ERRORS.NOT_FOUND'),
       );
     }
 

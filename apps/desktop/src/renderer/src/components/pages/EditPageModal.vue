@@ -120,8 +120,12 @@ onBeforeUnmount(() => {
                 v-model="page.path"
                 placeholder="e.g. /about-us (or leave it blank)"
                 :errors="pageUpdateRequest.errors.path"
-                hint="System will populate it, if blank"
+                :disabled="page.homePage"
+                :hint="
+                  page.homePage ? 'Home page uses empty route' : 'System will populate it, if blank'
+                "
                 class="flex-1 text-sm placeholder:text-gray-500"
+                :class="{ 'opacity-50 cursor-not-allowed': page.homePage }"
               />
             </div>
 
