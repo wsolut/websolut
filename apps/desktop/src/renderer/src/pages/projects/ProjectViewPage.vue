@@ -1,6 +1,15 @@
 <template>
-  <div class="p-6">
-    <div v-if="project" class="flex justify-between items-start mb-8">
+  <!-- Loading -->
+  <div v-if="projectRequest.status === 'pending'" class="text-gray-400 text-center mt-20">
+    <Loader size="xl" />
+  </div>
+
+  <!-- Not found -->
+  <ProjectNotFound v-else-if="projectRequest.status === 'not_found'" />
+
+  <!-- Project details and pages -->
+  <div v-else-if="project" class="p-6">
+    <div class="flex justify-between items-start mb-8">
       <div>
         <h1 class="text-white text-xl font-light mb-4">
           {{ project.name }}
@@ -110,6 +119,8 @@ import { RequestStatus } from '@/entities';
 import { JobStatus, Page, Project } from '@/@types';
 import { usePages, useProjects } from '@/composables';
 import { Icon } from '@iconify/vue';
+import ProjectNotFound from '@/components/projects/ProjectNotFound.vue';
+import Loader from '@/components/common/Loader.vue';
 
 const { pageAddJobStatus, pageUpdateJobStatus, pageDeleteJobStatus, pageHasPreview } = usePages();
 
