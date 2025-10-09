@@ -9,35 +9,34 @@
 <%
   const flatDomxNodes = document.nodes;
 
-  function renderCssRules(domxNode) {
-    const properties = Object.keys(domxNode.style || {})
+  function renderCssRules(properties) {
+    const rules = Object.keys(properties || {})
       .map((property) => {
-        let value = domxNode.style[property];
+        let rule = properties[property];
 
-        if (typeof value === 'string' && value.match(/%.*%/)) {
-          value = render(value, flatDomxNodes);
+        if (typeof rule === 'object') {
+          rule = renderCssRules(rule);
+
+          return ((rule ?? '') !== '') ? beautifyCss(`&${property} {\n${rule}\n}`, { indent_size: 2 }) : undefined;
         }
 
-        return ((value ?? '') !== '') ? `${kebabCase(property)}: ${value};` : undefined;
-      })
-      .filter((value) => value !== undefined);
+        if (typeof rule === 'string' && rule.match(/%.*%/)) {
+          rule = render(rule, flatDomxNodes);
+        }
 
-    if (properties.length === 0) {
+        return ((rule ?? '') !== '') ? `${property}: ${rule};` : undefined;
+      })
+      .filter((rule) => rule !== undefined);
+
+    if (rules.length === 0) {
       return '';
     }
 
-    return properties.join('\n');
-  }
-
-  function kebabCase(value) {
-    return value
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
-      .replace(/[\s_]+/g, '-')
-      .toLowerCase();
+    return rules.join('\n');
   }
 
   Object.values(flatDomxNodes).forEach((domxNode) => {
-    const cssRules = renderCssRules(domxNode) || '';
+    const cssRules = renderCssRules(domxNode.style || {}) || '';
     const id = domxNode.attributes.id || '';
 
     if (cssRules !== '' && id !== '') {

@@ -74,11 +74,11 @@
         }
       },
       "style": {
-        "backgroundImage": "url(<%- i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].filePath || i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].url %>)",
-        "backgroundPosition": "center",
-        "backgroundRepeat": "no-repeat",
-        "backgroundSize": "cover",
-        "borderRadius": "24px",
+        "background-image": "url(<%- i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].filePath || i80864888067139280671625.assets['2f44802a1e60e100445f7065aeea100fe646b924'].url %>)",
+        "background-position": "center",
+        "background-repeat": "no-repeat",
+        "background-size": "cover",
+        "border-radius": "24px",
         "height": "100%",
         "overflow": "auto",
         "width": "100%"
