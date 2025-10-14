@@ -24,6 +24,10 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  deleteAppDataOnUninstall: true
+  oneClick: false
+  runAfterFinish: true
+  allowToChangeInstallationDirectory: true
 mac:
   # Point to existing macOS ICNS (previous path folder didn't exist)
   icon: build/icon.icns
