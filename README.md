@@ -117,15 +117,37 @@ npm run start:desktop
 
 ### macOS
 
+Using a macOS environment:
+
 ```bash
 cd apps/desktop
 npm run build:mac
 ```
 
-The build outputs will be located at:
+Will produce a unsigned **installer** and **executable** inside the ```dist``` folder.
 
-* **Installer**: `apps/desktop/dist/websolut-desktop-<version>.dmg`
-* **Executable**: `apps/desktop/dist/<mac-platform>/websolut-desktop`
+```bash
+npm run dist:mac
+```
+
+Will use your Apple developer certificates to produce a signed **installer** and **executable** inside the ```dist``` folder.
+
+### Windows
+
+Using a Windows environment:
+
+```bash
+cd apps/desktop
+npm run build:win
+```
+
+Will produce a unsigned **installer** and **executable** inside the ```dist``` folder.
+
+```bash
+npm run dist:win
+```
+
+Will produce a signed **installer** and **executable** inside the ```dist``` folder.
 
 ---
 
