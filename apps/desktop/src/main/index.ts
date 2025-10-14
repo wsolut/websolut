@@ -1,34 +1,48 @@
-import { app, ipcMain, dialog, BrowserWindow } from 'electron';
+import { app, ipcMain, dialog, BrowserWindow, nativeImage } from 'electron';
 import { AppManager } from './app-manager';
+import * as path from 'path';
 
 const appManager = new AppManager(app);
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app
-  .whenReady()
-  .then(() => appManager.boot())
-  .catch(console.error);
+app.name = 'Websolut';
 
-// Register ipc events down bellow
+if (process.platform === 'darwin') {
+  const iconPath = path.join(__dirname, '../../resources/icon.png');
+  const image = nativeImage.createFromPath(iconPath);
+  if (app.dock) {
+    app.dock.setIcon(image);
+  }
+}
+
+app.on('ready', () => {
+  if (process.platform === 'darwin') {
+    app.setActivationPolicy('regular');
+  }
+
+  try {
+    appManager.boot();
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 ipcMain.on('ping', () => console.log('pong'));
 
-ipcMain.handle('serverStatus', () => {
-  return appManager.backendServerStatus();
-});
+ipcMain.handle('serverStatus', () => appManager.backendServerStatus());
+
 ipcMain.handle('startServer', async () => {
   await appManager.startServer();
-
   return appManager.backendServerStatus();
 });
-ipcMain.handle('stopServer', async () => await appManager.stopServer());
 
-// IPC handler to open a folder picker dialog
+ipcMain.handle('stopServer', async () => {
+  await appManager.stopServer();
+  return appManager.backendServerStatus();
+});
+
 ipcMain.handle('pickFolder', async () => {
   const win = BrowserWindow.getFocusedWindow();
   const result = await dialog.showOpenDialog({
-    // Only set 'window' if win is not null
     ...(win ? { window: win } : {}),
     properties: ['openDirectory'],
   });

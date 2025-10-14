@@ -1,9 +1,8 @@
-import { app, App, BrowserWindow, Tray, Menu, nativeImage, shell } from 'electron';
+import { app, App, BrowserWindow, shell } from 'electron';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Manager as BackendManager, PortAlreadyInUseError } from 'websolut-backend';
-import trayIconTemplate from '../../resources/trayIcon.png?asset';
 import { browserWindowConfig } from './config/browser-window-config';
 import chokidar, { FSWatcher } from 'chokidar';
 import dotenv from 'dotenv';
@@ -12,7 +11,6 @@ import { copyDirSync, copyFileSync, createDirSync, readFileSync, writeFileSync }
 const DEFAULT_BACKEND_PORT = '5556';
 const DEFAULT_OUT_DIR_PATH = './tmp';
 const OUT_DIR_NAME = 'out';
-const SHOW_ON_TRAY = true;
 const QUIT_TIMEOUT = 1000;
 
 dotenv.config();
@@ -20,9 +18,7 @@ dotenv.config();
 export class AppManager {
   app: App;
   backendServer: BackendManager;
-  tray!: Tray;
   win?: BrowserWindow;
-  showOnTray: boolean = SHOW_ON_TRAY;
   backendServerError: string = '';
   private fileWatcher?: FSWatcher;
   private isQuitting: boolean = false;
@@ -51,15 +47,12 @@ export class AppManager {
   boot(): void {
     electronApp.setAppUserModelId('com.electron');
 
-    // When User tries to open a second instance
     this.app.on('second-instance', () => {
       if (this.win) {
         if (this.win.isMinimized()) {
           this.win.restore();
-        } else {
-          this.win.show();
         }
-
+        this.win.show();
         this.win.focus();
       }
     });
@@ -72,26 +65,23 @@ export class AppManager {
       optimizer.watchWindowShortcuts(window);
     });
 
-    // Quit when all windows are closed, except on macOS. There, it's common
-    // for applications and their menu bar to stay active until the user quits
-    // explicitly with Cmd + Q.
     this.app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
-        void this.quit();
-      }
+      void this.quit();
     });
 
     this.createMainWindow();
 
-    if (this.showOnTray) {
-      this.tray = this.createTrayIcon();
-    }
-
-    // On macOS, re-open the window when the dock icon is clicked
     this.app.on('activate', () => {
       if (this.win) {
-        this.win.show(); // Show the window if it's hidden
-        this.win.setSkipTaskbar(false);
+        this.win.show();
+        this.win.focus();
+        if (process.platform === 'darwin') {
+          try {
+            void app.dock?.show();
+          } catch (e) {
+            console.error(e);
+          }
+        }
       } else {
         this.createMainWindow();
       }
@@ -124,35 +114,24 @@ export class AppManager {
   }
 
   async quit(): Promise<void> {
-    // Set quitting flag to bypass window close prevention
     this.isQuitting = true;
 
-    // Close file watcher to prevent the process from hanging
     if (this.fileWatcher) {
       await this.fileWatcher.close();
       this.fileWatcher = undefined;
     }
 
-    // Destroy tray to clean up resources
-    if (this.tray) {
-      this.tray.destroy();
-    }
-
     await this.stopServer();
 
-    // Force close the main window without triggering the close event prevention
     if (this.win && !this.win.isDestroyed()) {
-      this.win.removeAllListeners('close'); // Remove the preventDefault listener
+      this.win.removeAllListeners('close');
       this.win.close();
     }
 
-    // Force quit the app
     this.app.quit();
 
-    // If app.quit() doesn't work, force exit the process
     setTimeout(() => {
       console.log('Force exiting process...');
-
       process.exit(0);
     }, QUIT_TIMEOUT);
   }
@@ -174,7 +153,6 @@ export class AppManager {
     let sourcePath: string;
 
     if (app.isPackaged) {
-      // In packaged app (after build), resources are in app.asar.unpacked
       sourcePath = path.join(
         process.resourcesPath,
         'app.asar.unpacked',
@@ -182,7 +160,6 @@ export class AppManager {
         'backend-spa',
       );
     } else {
-      // In development mode, resources are in the project directory
       sourcePath = path.join(__dirname, '..', '..', 'resources', 'backend-spa');
     }
 
@@ -205,45 +182,6 @@ export class AppManager {
         copyFileSync(sourceFilePath, destinationFilePath);
       }
     });
-  }
-
-  protected createTrayIcon(): Tray {
-    const trayIcon = nativeImage.createFromPath(trayIconTemplate);
-    const smallerTrayIcon = trayIcon.resize({ width: 20, height: 20 });
-    smallerTrayIcon.setTemplateImage(true);
-
-    const tray = new Tray(smallerTrayIcon);
-    tray.setToolTip('Websolut Desktop App');
-    tray.setContextMenu(this.createContextMenu());
-    tray.setIgnoreDoubleClickEvents(true);
-
-    // On Windows, also open the context menu on left-click for parity with macOS
-    if (process.platform === 'win32') {
-      tray.on('click', () => {
-        tray.popUpContextMenu();
-      });
-    }
-
-    return tray;
-  }
-
-  protected createContextMenu(): Menu {
-    return Menu.buildFromTemplate([
-      { label: 'Websolut Desktop App', enabled: false },
-      { type: 'separator' },
-      {
-        label: 'Status',
-        click: () => {
-          if (this.win) {
-            this.win.show();
-            this.win.webContents.send('navigate-to', { route: '/' });
-          }
-        },
-      },
-      // { label: 'Check for updates' },
-      { type: 'separator' },
-      { label: 'Quit', click: () => void this.quit() },
-    ]);
   }
 
   protected createMainWindow(options?: { devTools?: boolean }) {
@@ -279,77 +217,8 @@ export class AppManager {
       this.win = undefined;
     });
 
-    // Ensure minimizing keeps the app visible in Dock/taskbar
-    mainWindow.on('minimize', () => {
-      if (process.platform === 'darwin') {
-        void app.dock?.show();
-      }
-      // Keep in taskbar on Windows/Linux when minimized
-      mainWindow.setSkipTaskbar(false);
-    });
-
-    // Ensure maximizing keeps Dock/taskbar visible
-    mainWindow.on('maximize', () => {
-      if (process.platform === 'darwin') {
-        void app.dock?.show();
-      }
-      mainWindow.setSkipTaskbar(false);
-    });
-
-    // Ensure entering full-screen keeps Dock (app icon) and taskbar entry logic sane
-    mainWindow.on('enter-full-screen', () => {
-      if (process.platform === 'darwin') {
-        void app.dock?.show();
-      }
-      mainWindow.setSkipTaskbar(false);
-    });
-
-    // Prevent the app from quitting when the window is closed
-    mainWindow.on('close', (event) => {
-      // Allow closing if we're in the process of quitting
+    mainWindow.on('close', () => {
       if (this.isQuitting) return;
-
-      if (this.showOnTray) {
-        // Prevent default behavior
-        event.preventDefault();
-
-        // Hide the window instead of closing it
-        mainWindow.hide();
-
-        // On macOS
-        if (process.platform === 'darwin') {
-          void this.app.dock?.hide(); // Hide the dock icon to mimic closing
-        }
-      } else {
-        this.app.quit();
-      }
-    });
-
-    mainWindow.on('show', function () {
-      if (process.platform === 'darwin') {
-        void app.dock?.show();
-      }
-      mainWindow.setSkipTaskbar(false);
-    });
-
-    mainWindow.on('hide', () => {
-      const isMin = mainWindow.isMinimized();
-      const isFS = mainWindow.isFullScreen();
-      const isMax = mainWindow.isMaximized();
-
-      // Only hide Dock icon when we're truly hiding to tray
-      if (this.showOnTray) {
-        if (process.platform === 'darwin' && !isMin && !isFS && !isMax) {
-          void app.dock?.hide();
-        }
-      }
-
-      // Remove from taskbar only when hiding to tray (not minimized/maximized/fullscreen)
-      if (!isMin && !isFS && !isMax) {
-        mainWindow.setSkipTaskbar(true);
-      } else {
-        mainWindow.setSkipTaskbar(false);
-      }
     });
   }
 }
