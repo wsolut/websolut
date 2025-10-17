@@ -517,7 +517,7 @@ export class FigmaNodeConverter {
       if (char === '\n') {
         lastTextNode.name = '<p>';
       } else {
-        lastTextNode.characters += char === ' ' ? '&nbsp;' : char;
+        lastTextNode.characters += char;
 
         overwritesIndex++;
       }
