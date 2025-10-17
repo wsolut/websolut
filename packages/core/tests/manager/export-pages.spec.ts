@@ -160,6 +160,9 @@ describe('Manager#export', () => {
   box-sizing: border-box;
   -webkit-font-smoothing: subpixel-antialiased !important;
 }
+a {
+  text-decoration: none;
+}
 #main-container {
   justify-content: flex-start;
 }
@@ -222,6 +225,9 @@ describe('Manager#export', () => {
   background: none;
   box-sizing: border-box;
   -webkit-font-smoothing: subpixel-antialiased !important;
+}
+a {
+  text-decoration: none;
 }
 #main-container {
   justify-content: flex-start;
