@@ -1853,6 +1853,10 @@ export class FigmaNodeConverter {
   }
 
   cssJustifyContent(): string | undefined {
+    if (this.nodeType === 'TEXT') {
+      return this.cssTextAlign();
+    }
+
     // For grid containers, prefer place-content shorthand and skip justify-content
     if (this.nodeAsFrame.layoutMode === 'GRID') return undefined;
 
