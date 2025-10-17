@@ -1,0 +1,61 @@
+<%
+  const flatDomxNodes = document.nodes;
+
+  function renderDomxNode(domxNode, indentLevel = 0) {
+    if (!domxNode) return '';
+
+    const tagName = domxNode.name.toLowerCase();
+    const attributes = renderDomxNodeAttributes(domxNode.attributes);
+    const content = renderDomxNodeContent(domxNode);
+
+    return beautifyHtml(
+      `<${tagName}${(attributes ?? '') !== '' ? ' ' + attributes : ''}>${content}</${tagName}>`,
+      { indent_size: 2, indent_level: indentLevel },
+    );
+  }
+
+  function renderDomxNodeAttributes(attributes) {
+    const renderedAttributes = {};
+
+    Object.keys(attributes).forEach((key) => {
+      renderedAttributes[key] = render(attributes[key], flatDomxNodes);
+    });
+
+    return Object.entries(renderedAttributes).map(([key, val]) => `${key}="${val}"`).join(' ');
+  }
+
+  function renderDomxNodeContent(domxNode) {
+    let content = renderDomxNodeChildren(domxNode);
+
+    if (domxNode.text) {
+      const processedValue = domxNode.text.replace(/\n/g, '<br />');
+
+      content = `${processedValue}${content}`;
+    }
+
+    if (content.trim() !== '') {
+      content = `\n${content}\n`;
+    }
+
+    return beautifyHtml(content, { indent_size: 2 });
+  }
+
+  function renderDomxNodeChildren(domxNode, indentLevel = 0) {
+    if (!domxNode) return '';
+
+    const children = domxNode.childrenIds.map((childId) => flatDomxNodes[childId]);
+
+    return children.map((child) => renderDomxNode(child, indentLevel)).join(`\n`);
+  }
+-%>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%- document.metadata.figmaFile.name %></title>
+  <link media="all" rel="stylesheet" href="./styles.css"></link>
+<%- renderDomxNodeChildren(flatDomxNodes[document.headId], 1) %>
+</head>
+<%- renderDomxNode(flatDomxNodes[document.bodyId]) %>
+</html>

@@ -1,0 +1,64 @@
+{
+  "name": "@wsolut/websolut-cli",
+  "version": "0.1.0-alpha",
+  "description": "Command line interface to interact with websolut-core.",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "contributors": [
+    "Joao Goncalves"
+  ],
+  "bin": {
+    "websolut": "./bin/websolut.js"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "npm run build && ./bin/websolut.js",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
+    "build": "npm run clean && tsup && npm run copy-resources && chmod +x bin/websolut.js",
+    "copy-resources": "mkdir dist/resources && cp -fR src/resources/* dist/resources",
+    "clean": "rimraf dist tmp",
+    "lint": "eslint . --fix",
+    "format": "prettier .",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "prettier": "^3.4.2",
+    "prettier-eslint": "^16.4.2",
+    "tsup": "^8.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.33.0",
+    "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "@wsolut/websolut-core": "^0.8.0-alpha",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.3",
+    "inquirer": "^12.9.6"
+  }
+}
