@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import { reactive, ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
 import { backendClient } from '@/utils';
 import Button from '@/components/common/Button.vue';
 import Input from '@/components/common/Input.vue';
@@ -30,6 +30,15 @@ const blankPage = computed<PageInputDto>(() => ({
 
 const page = reactive<PageInputDto>({ ...blankPage.value });
 const { isDirty, rollback } = useDirtyState(blankPage.value);
+
+watch(
+  () => page.homePage,
+  (isHomePage) => {
+    if (isHomePage) {
+      page.path = '';
+    }
+  },
+);
 
 function clearPage() {
   rollback(page);
@@ -131,8 +140,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
               v-model="page.path"
               placeholder="e.g. /about-us (or leave it blank)"
               :errors="pageCreateRequest.errors.path"
-              hint="System will populate it, if blank"
+              :disabled="page.homePage"
+              :hint="
+                page.homePage ? 'Home page uses empty route' : 'System will populate it, if blank'
+              "
               class="flex-1 text-sm placeholder:text-gray-500"
+              :class="{ 'opacity-50 cursor-not-allowed': page.homePage }"
             />
           </div>
 
