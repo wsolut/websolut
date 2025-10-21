@@ -669,7 +669,7 @@ export class FigmaNodeConverter {
 
     const parts = attrDeclaration.split('=');
     const attributeName = parts[0].trim();
-    const attributeValue =
+    let attributeValue =
       parts.length === 1
         ? attributeName
         : parts
@@ -677,6 +677,10 @@ export class FigmaNodeConverter {
             .join('=')
             .trim()
             .replace(/^'|^"|'$|"$/g, '');
+
+    if (attributeName === 'href') {
+      attributeValue = attributeValue.replace(/\s+/g, '-');
+    }
 
     if (attributeName) {
       this._domxAttributes[attributeName] = attributeValue;
