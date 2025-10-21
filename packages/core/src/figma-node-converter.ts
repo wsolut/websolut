@@ -1884,18 +1884,20 @@ export class FigmaNodeConverter {
   }
 
   left(): number | undefined {
-    if (this.nodeAsFrame.relativeTransform === undefined) {
-      return undefined;
-    }
-    if (this.nodeAsFrame.relativeTransform[0][0] === undefined) {
-      return undefined;
-    }
-
-    if (this.isRotated() && this.parent)
+    if ((this.isRotated() || this.nodeIsImgType()) && this.parent) {
       return (
         this.nodeAsFrame.absoluteBoundingBox.x -
         this.parent.nodeAsFrame.absoluteBoundingBox.x
       );
+    }
+
+    if (this.nodeAsFrame.relativeTransform === undefined) {
+      return undefined;
+    }
+
+    if (this.nodeAsFrame.relativeTransform[0][0] === undefined) {
+      return undefined;
+    }
 
     return this.nodeAsFrame.relativeTransform[0][0] === 0
       ? 0
@@ -2392,18 +2394,19 @@ export class FigmaNodeConverter {
   }
 
   top(): number | undefined {
+    if ((this.isRotated() || this.nodeIsImgType()) && this.parent) {
+      return (
+        this.nodeAsFrame.absoluteBoundingBox.y -
+        this.parent.nodeAsFrame.absoluteBoundingBox.y
+      );
+    }
+
     if (this.nodeAsFrame.relativeTransform === undefined) {
       return undefined;
     }
     if (this.nodeAsFrame.relativeTransform[1][1] === undefined) {
       return undefined;
     }
-
-    if (this.isRotated() && this.parent)
-      return (
-        this.nodeAsFrame.absoluteBoundingBox.y -
-        this.parent.nodeAsFrame.absoluteBoundingBox.y
-      );
 
     return this.nodeAsFrame.relativeTransform[1][1] === 0
       ? 0

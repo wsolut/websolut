@@ -4,3 +4,4 @@ export * from './group';
 export * from './instance';
 export * from './section';
 export * from './text';
+export * from './vector';
