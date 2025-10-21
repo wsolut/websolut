@@ -2206,6 +2206,14 @@ export class FigmaNodeConverter {
       return undefined;
     }
 
+    if (this.nodeAsFrame.scrollBehavior === 'STICKY_SCROLLS') {
+      return 'sticky';
+    }
+
+    if (this.nodeAsFrame.scrollBehavior === 'FIXED') {
+      return 'fixed';
+    }
+
     if (this.nodeAsFrame.layoutPositioning === 'ABSOLUTE') {
       if (this.parent?.rootNode) {
         return 'fixed';
