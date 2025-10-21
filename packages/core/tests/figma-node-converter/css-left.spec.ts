@@ -8,7 +8,7 @@ describe('NodeWrapper#cssLeft', () => {
     const instance = FigmaNodeConverter.create(
       {
         ...FigmaExamples.frame,
-        isFixed: true,
+        scrollBehavior: 'FIXED',
         relativeTransform: [
           [1.0, 6.695353402725896e-17, 462.0],
           [-6.695353402725896e-17, 1.0, 609.0],
@@ -25,7 +25,7 @@ describe('NodeWrapper#cssLeft', () => {
     const instance = FigmaNodeConverter.create(
       {
         ...FigmaExamples.frame,
-        isFixed: true,
+        scrollBehavior: 'FIXED',
         relativeTransform: [
           [0, 6.695353402725896e-17, 462.0],
           [-6.695353402725896e-17, 1.0, 609.0],

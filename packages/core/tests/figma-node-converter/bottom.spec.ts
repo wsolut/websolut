@@ -9,7 +9,7 @@ describe('NodeWrapper', () => {
       const instance = FigmaNodeConverter.create(
         {
           ...FigmaExamples.frame,
-          isFixed: true,
+          scrollBehavior: 'FIXED',
           constraints: {
             vertical: 'BOTTOM',
             horizontal: 'LEFT',
@@ -30,7 +30,7 @@ describe('NodeWrapper', () => {
       const instance = FigmaNodeConverter.create(
         {
           ...FigmaExamples.frame,
-          isFixed: true,
+          scrollBehavior: 'FIXED',
           constraints: {
             vertical: 'BOTTOM',
             horizontal: 'LEFT',
