@@ -20,7 +20,7 @@ import { ProjectEntity } from '../projects/project.entity';
 import { PagesGateway } from './pages.gateway';
 import * as WebsolutCore from '@wsolut/websolut-core';
 import { JobStatusesService } from '../job-statuses';
-import { sanitizedRoute, sanitizedFileName } from '../utils';
+import { sanitizedRoute } from '../utils';
 
 const MAX_UNIQUE_PATH_ATTEMPTS = 100;
 
@@ -152,7 +152,7 @@ export class PagesService extends BaseService {
     return {
       results,
       total: count,
-      pages: 1, // Assuming pagination is not implemented yet
+      pages: 1,
     };
   }
 
@@ -169,22 +169,7 @@ export class PagesService extends BaseService {
   }
 
   async create(data: PageCreateInputDto): Promise<PageEntity> {
-    let sanitizedPath = sanitizedFileName(data.path);
-
-    if (!data.homePage && (data.path ?? '') === '') {
-      sanitizedPath = await this.generateUniquePathFor(
-        sanitizedPath,
-        data.projectId,
-      );
-    }
-
-    data.path = sanitizedPath;
-
     const parsedData = await this.createValidateOrFail(data);
-
-    if (parsedData.homePage) {
-      parsedData.lastKnownRoute = sanitizedPath;
-    }
 
     const page = new PageEntity({
       ...parsedData,
@@ -197,18 +182,6 @@ export class PagesService extends BaseService {
   }
 
   async update(id: number, data: PageUpdateInputDto): Promise<PageEntity> {
-    let sanitizedPath = sanitizedFileName(data.path);
-
-    if (!data.homePage && (data.path ?? '') === '') {
-      sanitizedPath = await this.generateUniquePathFor(
-        sanitizedPath,
-        data.projectId,
-        id,
-      );
-    }
-
-    data.path = sanitizedPath;
-
     const page = await this.fetchOne({ where: { id } });
 
     const parsedData = await this.updateValidateOrFail(data, id);
@@ -244,10 +217,7 @@ export class PagesService extends BaseService {
       websolutManager.deleteData();
     }
 
-    this.deleteVariantDir(page);
-    this.deleteExportDir(page);
-    this.deleteDeployDir(page);
-    this.deletePreviewDirs(page);
+    this.deleteAllPageDirectories(page);
 
     await this.dbDelete(page);
 
@@ -262,34 +232,12 @@ export class PagesService extends BaseService {
     const isUpdate = page.id !== undefined && page.id !== null;
 
     if (page.homePage) {
-      const query: FindOptionsWhere<PageEntity> = {
-        homePage: true,
-        project: { id: page.projectId },
-      };
-      if (page.id) query.id = Not(page.id);
-
-      const existingPages = await this.pagesRepository.find({ where: query });
-
-      for (const existingPage of existingPages) {
-        existingPage.path = await this.generateUniquePathFor(
-          existingPage.lastKnownRoute ||
-            sanitizedRoute(existingPage.figmaNodeName),
-          existingPage.projectId,
-          existingPage.id,
-        );
-        existingPage.homePage = false;
-
-        await this.pagesRepository.save(existingPage);
-        await this.refreshJobStatuses(existingPage);
-        this.pagesGateway.publishUpdate(existingPage);
-      }
-
-      page.lastKnownRoute = page.path || sanitizedRoute(page.figmaNodeName);
-      page.path = '';
-    } else if (page.path === '') {
+      await this.handleHomePageUpdate(page);
+    } else if (!page.path) {
       page.path = await this.generateUniquePathFor(
         sanitizedRoute(page.figmaNodeName),
         page.projectId,
+        page.id,
       );
     }
 
@@ -297,11 +245,7 @@ export class PagesService extends BaseService {
 
     await this.refreshJobStatuses(page);
 
-    if (isUpdate) {
-      this.pagesGateway.publishUpdate(page);
-    } else {
-      this.pagesGateway.publishCreate(page);
-    }
+    this.publishPageEvent(page, isUpdate);
 
     return true;
   }
@@ -321,40 +265,78 @@ export class PagesService extends BaseService {
     projectId: number,
     pageId?: number,
   ): Promise<string> {
-    let index = await this.pagesRepository.count({
-      where: {
-        project: { id: projectId },
-      },
-    });
+    const basePath = uniquePath;
+    let index = 0;
+    let attempts = 0;
 
-    while (true) {
-      const isUnique = await this.checkPathUniqueness(
-        uniquePath,
-        projectId,
-        pageId,
-      );
+    while (attempts < MAX_UNIQUE_PATH_ATTEMPTS) {
+      const candidatePath = index === 0 ? basePath : `${basePath}-${index}\0`;
 
-      if (isUnique) {
-        break;
+      if (await this.checkPathUniqueness(candidatePath, projectId, pageId)) {
+        return candidatePath;
       }
 
       index++;
-      uniquePath = `page${index}\0`;
-
-      if (index === MAX_UNIQUE_PATH_ATTEMPTS) {
-        throw new Error(
-          'Unable to generate a unique path after maximum attempts',
-        );
-      }
+      attempts++;
     }
 
-    return uniquePath;
+    throw new Error('Unable to generate a unique path after maximum attempts');
   }
 
-  private async createValidateOrFail(
-    data: PageCreateInputDto,
-  ): Promise<PageEntity> {
-    const validationSchema = z.object({
+  private async handleHomePageUpdate(page: PageEntity): Promise<void> {
+    const existingPages = await this.pagesRepository.find({
+      where: this.buildQueryWithIdExclusion(
+        {
+          homePage: true,
+          project: { id: page.projectId },
+        },
+        page.id,
+      ),
+    });
+
+    for (const existingPage of existingPages) {
+      existingPage.path = await this.generateUniquePathFor(
+        existingPage.lastKnownRoute ||
+          sanitizedRoute(existingPage.figmaNodeName),
+        existingPage.projectId,
+        existingPage.id,
+      );
+      existingPage.homePage = false;
+
+      await this.pagesRepository.save(existingPage);
+      await this.refreshJobStatuses(existingPage);
+      this.pagesGateway.publishUpdate(existingPage);
+    }
+
+    if (!page.lastKnownRoute) {
+      const dbPage = await this.pagesRepository.findOne({
+        where: { id: page.id },
+      });
+      page.lastKnownRoute = dbPage?.path || sanitizedRoute(page.figmaNodeName);
+    }
+    page.path = '';
+  }
+
+  private publishPageEvent(page: PageEntity, isUpdate: boolean): void {
+    if (isUpdate) {
+      this.pagesGateway.publishUpdate(page);
+    } else {
+      this.pagesGateway.publishCreate(page);
+    }
+  }
+
+  private buildQueryWithIdExclusion(
+    baseQuery: FindOptionsWhere<PageEntity>,
+    excludeId?: number,
+  ): FindOptionsWhere<PageEntity> {
+    if (excludeId) {
+      return { ...baseQuery, id: Not(excludeId) };
+    }
+    return baseQuery;
+  }
+
+  private getBaseValidationSchema() {
+    return {
       path: z
         .string()
         .trim()
@@ -362,8 +344,29 @@ export class PagesService extends BaseService {
           message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
             length: PATH_MAX_LENGTH,
           }),
-        }),
+        })
+        .transform((val) => (val === '' ? undefined : sanitizedRoute(val))),
       homePage: z.boolean(),
+      projectId: z
+        .number()
+        .int()
+        .positive({
+          message: this.langService.t('.VALIDATIONS.REQUIRED'),
+        }),
+      figmaToken: z
+        .string()
+        .trim()
+        .min(1, {
+          message: this.langService.t('.VALIDATIONS.FIGMA_TOKEN.REQUIRED'),
+        }),
+    };
+  }
+
+  private async createValidateOrFail(
+    data: PageCreateInputDto,
+  ): Promise<PageEntity> {
+    const validationSchema = z.object({
+      ...this.getBaseValidationSchema(),
       figmaUrl: z
         .string()
         .trim()
@@ -392,13 +395,8 @@ export class PagesService extends BaseService {
                 '.VALIDATIONS.FIGMA_URL.NODE_ID_REQUIRED',
               ),
             });
-            return;
           }
         }),
-      projectId: z.number().int().positive({}),
-      figmaToken: z.string().min(1, {
-        message: this.langService.t('.VALIDATIONS.FIGMA_TOKEN.REQUIRED'),
-      }),
     });
 
     const parsedData = await this.validateOrFail(data, validationSchema);
@@ -416,17 +414,7 @@ export class PagesService extends BaseService {
     pageId: number,
   ): Promise<PageEntity> {
     const validationSchema = z.object({
-      path: z
-        .string()
-        .trim()
-        .max(PATH_MAX_LENGTH, {
-          message: this.langService.t('.VALIDATIONS.MAX_LENGTH', {
-            length: PATH_MAX_LENGTH,
-          }),
-        }),
-      homePage: z.boolean(),
-      projectId: z.number().int().positive({}),
-      figmaToken: z.string(),
+      ...this.getBaseValidationSchema(),
     });
 
     return this.validateOrFail(data, validationSchema, pageId);
@@ -437,14 +425,13 @@ export class PagesService extends BaseService {
     projectId: number,
     pageId?: number,
   ): Promise<boolean> {
-    const query: FindOptionsWhere<PageEntity> = {
-      path,
-      project: { id: projectId },
-    };
-
-    if (pageId) {
-      query.id = Not(pageId);
-    }
+    const query = this.buildQueryWithIdExclusion(
+      {
+        path,
+        project: { id: projectId },
+      },
+      pageId,
+    );
 
     return !(await this.pagesRepository.exists({ where: query }));
   }
@@ -454,28 +441,11 @@ export class PagesService extends BaseService {
     validationSchema: z.ZodObject<z.ZodRawShape>,
     pageId?: number,
   ): Promise<PageEntity> {
-    const project: ProjectEntity | null =
-      await this.projectsRepository.findOneBy({
-        id: data.projectId,
-      });
+    const project = await this.projectsRepository.findOneBy({
+      id: data.projectId,
+    });
 
     const result = this.validateSchema(validationSchema, data);
-    const parsedData = result.data as PageEntity;
-
-    if (!(await this.checkPathUniqueness(data.path, data.projectId, pageId))) {
-      result.errors['path'] ||= [];
-      result.errors['path'].push(this.langService.t('.VALIDATIONS.PATH.TAKEN'));
-    }
-
-    if (
-      !data.homePage &&
-      (await this.noOtherHomePage(data.projectId, pageId))
-    ) {
-      result.errors['homePage'] ||= [];
-      result.errors['homePage'].push(
-        this.langService.t('.VALIDATIONS.HOME_PAGE.MUST_HAVE_ONE'),
-      );
-    }
 
     if (!project) {
       result.errors['projectId'] ||= [];
@@ -491,20 +461,71 @@ export class PagesService extends BaseService {
       );
     }
 
+    const parsedData = result.data as PageEntity;
+
+    await this.validatePathAndHomePage(parsedData, data, pageId, result);
+
+    if (Object.keys(result.errors).length) {
+      throw new InvalidArgumentError(
+        this.langService.t('.ERRORS.INVALID_ARGUMENT'),
+        result.errors,
+      );
+    }
+
     return parsedData;
   }
 
-  protected async noOtherHomePage(projectId: number, pageId?: number) {
-    const query: FindOptionsWhere<PageEntity> = {
-      homePage: true,
-      project: { id: projectId },
-    };
-
-    if (pageId) {
-      query.id = Not(pageId);
+  private async validatePathAndHomePage(
+    parsedData: PageEntity,
+    data: PageCreateInputDto | PageUpdateInputDto,
+    pageId: number | undefined,
+    result: { errors: Record<string, string[]> },
+  ): Promise<void> {
+    if (
+      parsedData.path != null &&
+      parsedData.path !== '' &&
+      !(await this.checkPathUniqueness(parsedData.path, data.projectId, pageId))
+    ) {
+      result.errors['path'] ||= [];
+      result.errors['path'].push(this.langService.t('.VALIDATIONS.PATH.TAKEN'));
     }
 
+    if (
+      !data.homePage &&
+      (await this.noOtherHomePage(data.projectId, pageId))
+    ) {
+      result.errors['homePage'] ||= [];
+      result.errors['homePage'].push(
+        this.langService.t('.VALIDATIONS.HOME_PAGE.MUST_HAVE_ONE'),
+      );
+    }
+  }
+
+  protected async noOtherHomePage(
+    projectId: number,
+    pageId?: number,
+  ): Promise<boolean> {
+    const query = this.buildQueryWithIdExclusion(
+      {
+        homePage: true,
+        project: { id: projectId },
+      },
+      pageId,
+    );
+
     return !(await this.pagesRepository.exists({ where: query }));
+  }
+
+  protected deleteAllPageDirectories(page: PageEntity): void {
+    this.deleteVariantDir(page);
+    this.deletePageDirFromBase(this.config.exportDirPath, page);
+    this.deletePageDirFromBase(this.config.deployDirPath, page);
+    this.deletePageDirFromBase(this.config.previewDirPath, page);
+  }
+
+  private deletePageDirFromBase(baseDirPath: string, page: PageEntity): void {
+    this.deleteDirectory(path.join(baseDirPath, page.pathForInternalExport));
+    this.deleteDirectory(path.join(baseDirPath, PAGES_DIR_NAME));
   }
 
   protected deleteVariantDir(page: PageEntity): void {
@@ -518,30 +539,8 @@ export class PagesService extends BaseService {
       ),
     );
   }
-  protected deleteExportDir(page: PageEntity): void {
-    this.deleteDirectory(
-      path.join(this.config.exportDirPath, page.pathForInternalExport),
-    );
 
-    this.deleteDirectory(path.join(this.config.exportDirPath, PAGES_DIR_NAME));
-  }
-
-  protected deleteDeployDir(page: PageEntity): void {
-    this.deleteDirectory(
-      path.join(this.config.deployDirPath, page.pathForInternalExport),
-    );
-
-    this.deleteDirectory(path.join(this.config.deployDirPath, PAGES_DIR_NAME));
-  }
-
-  protected deletePreviewDirs(page: PageEntity): void {
-    this.deleteDirectory(
-      path.join(this.config.previewDirPath, page.pathForInternalExport),
-    );
-    this.deleteDirectory(path.join(this.config.previewDirPath, PAGES_DIR_NAME));
-  }
-
-  protected deleteDirectory(dirPath: string) {
+  protected deleteDirectory(dirPath: string): void {
     if (fs.existsSync(dirPath)) {
       fs.rmSync(dirPath, { recursive: true, force: true });
     }

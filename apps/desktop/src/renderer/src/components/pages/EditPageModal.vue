@@ -14,7 +14,7 @@ import Input from '@/components/common/Input.vue';
 import Button from '@/components/common/Button.vue';
 import CloseButton from '@/components/common/CloseButton.vue';
 import ErrorsHint from '@/components/common/ErrorsHint.vue';
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { backendClient } from '@/utils';
 import { Page } from '@/@types';
 import { RequestStatus } from '@/entities';
@@ -27,6 +27,15 @@ const emit = defineEmits(['close', 'updated']);
 
 const page = ref<Page>({ ...props.page });
 const pageUpdateRequest = reactive(new RequestStatus());
+
+watch(
+  () => page.value.homePage,
+  (isHomePage) => {
+    if (isHomePage) {
+      page.value.path = '';
+    }
+  },
+);
 
 function closeModal() {
   pageUpdateRequest.status = 'idle';
@@ -120,8 +129,12 @@ onBeforeUnmount(() => {
                 v-model="page.path"
                 placeholder="e.g. /about-us (or leave it blank)"
                 :errors="pageUpdateRequest.errors.path"
-                hint="System will populate it, if blank"
+                :disabled="page.homePage"
+                :hint="
+                  page.homePage ? 'Home page uses empty route' : 'System will populate it, if blank'
+                "
                 class="flex-1 text-sm placeholder:text-gray-500"
+                :class="{ 'opacity-50 cursor-not-allowed': page.homePage }"
               />
             </div>
 
