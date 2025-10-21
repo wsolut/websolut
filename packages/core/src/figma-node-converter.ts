@@ -225,6 +225,7 @@ export class FigmaNodeConverter {
 
   shouldNotHaveChildren() {
     if (this.domxNodeName() === 'INPUT') return true;
+    if (this.nodeIsImgType()) return true;
 
     return false;
   }
@@ -270,11 +271,11 @@ export class FigmaNodeConverter {
   }
 
   nodeIsSvgType(): boolean {
-    return (
-      this.nodeType === 'VECTOR' ||
-      this.nodeType === 'ELLIPSE' ||
-      this.nodeExportSettingsFormatSvg !== undefined
-    );
+    if (this.nodeType === 'VECTOR') return true;
+    if (this.nodeType === 'ELLIPSE') return true;
+    if (this.nodeExportSettingsFormatSvg !== undefined) return true;
+
+    return false;
   }
 
   domxText(): string | undefined {
