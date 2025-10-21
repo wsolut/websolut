@@ -11,11 +11,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InvalidArgumentError, NotFoundError } from '../entities';
 import { BaseService } from '../services';
 import { I18nService } from 'nestjs-i18n';
-import { ProjectEntity } from './project.entity';
+import { ProjectEntity, PROJECTS_DIR_NAME } from './project.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Config } from '../config';
 import { ProjectInputDto, ProjectsPaginated } from './projects.dto';
 import { ProjectsGateway } from './projects.gateway';
+import * as WebsolutCore from '@wsolut/websolut-core';
 import { JobStatusesService } from '../job-statuses';
+import { PageEntity } from '../pages';
 
 const NAME_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
@@ -26,6 +30,8 @@ export class ProjectsService extends BaseService {
     @Inject('CONFIG') readonly config: Config,
     @InjectRepository(ProjectEntity)
     private projectsRepository: Repository<ProjectEntity>,
+    @InjectRepository(PageEntity)
+    private pagesRepository: Repository<PageEntity>,
     protected readonly i18nService: I18nService,
     private readonly projectsGateway: ProjectsGateway,
     private readonly jobStatusesService: JobStatusesService,
@@ -140,6 +146,10 @@ export class ProjectsService extends BaseService {
   async destroy(id: number): Promise<boolean> {
     const project = await this.fetchOne({ where: { id } });
 
+    await this.deleteProjectFigmaticData(project);
+
+    this.deleteAllProjectDirectories(project);
+
     await this.dbDelete(project);
 
     return true;
@@ -198,5 +208,64 @@ export class ProjectsService extends BaseService {
 
     return result.data as ProjectEntity;
   }
+
+  protected deleteAllProjectDirectories(project: ProjectEntity): void {
+    this.deleteProjectDirFromBase(this.config.exportDirPath, project.id);
+    this.deleteProjectDirFromBase(this.config.deployDirPath, project.id);
+    this.deleteProjectDirFromBase(this.config.previewDirPath, project.id);
+  }
+
+  private deleteProjectDirFromBase(
+    baseDirPath: string,
+    projectId: number,
+  ): void {
+    const fullPath = path.join(
+      baseDirPath,
+      PROJECTS_DIR_NAME,
+      String(projectId),
+    );
+    this.deleteDirectory(fullPath);
+  }
+
+  protected deleteDirectory(dirPath: string): void {
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+  }
+
+  private async deleteProjectFigmaticData(
+    project: ProjectEntity,
+  ): Promise<void> {
+    if (!project.pages || project.pages.length === 0) {
+      return;
+    }
+
+    for (const page of project.pages) {
+      const websolutManager = new WebsolutCore.Manager({
+        figmaToken: page.figmaToken || '-error-',
+        figmaFileKey: page.figmaFileKey,
+        figmaNodeId: page.figmaNodeId,
+        dataDirPath: this.config.dataDirPath,
+      });
+
+      websolutManager.loadData(page.contentVariantName);
+
+      // Check if any OTHER pages (in other projects) use this same figma node
+      const otherPagesUsingNode = await this.pagesRepository.exists({
+        where: {
+          figmaFileKey: page.figmaFileKey,
+          figmaNodeId: page.figmaNodeId,
+          project: {
+            id: Not(project.id), // Different project
+          },
+        },
+      });
+
+      if (!otherPagesUsingNode) {
+        websolutManager.deleteData();
+      }
+    }
+  }
 }
+
 export { ProjectInputDto };
