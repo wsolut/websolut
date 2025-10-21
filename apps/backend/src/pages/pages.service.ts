@@ -16,7 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../config';
 import z from 'zod';
-import { ProjectEntity } from '../projects/project.entity';
+import { ProjectEntity, PROJECTS_DIR_NAME } from '../projects/project.entity';
 import { PagesGateway } from './pages.gateway';
 import * as WebsolutCore from '@wsolut/websolut-core';
 import { JobStatusesService } from '../job-statuses';
@@ -518,13 +518,18 @@ export class PagesService extends BaseService {
 
   protected deleteAllPageDirectories(page: PageEntity): void {
     this.deleteVariantDir(page);
-    this.deletePageDirFromBase(this.config.exportDirPath, page);
-    this.deletePageDirFromBase(this.config.deployDirPath, page);
     this.deletePageDirFromBase(this.config.previewDirPath, page);
   }
 
   private deletePageDirFromBase(baseDirPath: string, page: PageEntity): void {
-    this.deleteDirectory(path.join(baseDirPath, page.pathForInternalExport));
+    const fullPath = path.join(
+      baseDirPath,
+      PROJECTS_DIR_NAME,
+      String(page.projectId),
+      PAGES_DIR_NAME,
+      String(page.id),
+    );
+    this.deleteDirectory(fullPath);
     this.deleteDirectory(path.join(baseDirPath, PAGES_DIR_NAME));
   }
 
