@@ -271,25 +271,30 @@ export class FigmaNodeConverter {
     return this.nodeIsSvgType();
   }
 
-  nodeIsSvgType(): boolean {
-    if (this._nodeIsSvgType !== undefined) return this._nodeIsSvgType;
-
-    this._nodeIsSvgType = false;
-
-    if (this.nodeType === 'VECTOR') {
-      // Rectangles that have been flatten are converted to VECTOR nodes
-      if (!figmaNodeRectLikeVector(this.node)) {
-        this._nodeIsSvgType = true;
-      }
-    } else if (this.nodeType === 'ELLIPSE') {
-      this._nodeIsSvgType = true;
-    } else if (this.nodeExportSettingsFormatSvg !== undefined) {
-      this._nodeIsSvgType = true;
+  nodeIsRectLikeVector(): boolean {
+    if (this._nodeIsRectLikeVector !== undefined) {
+      return this._nodeIsRectLikeVector;
     }
 
-    return this._nodeIsSvgType;
+    return (this._nodeIsRectLikeVector = figmaNodeRectLikeVector(this.node));
   }
-  private _nodeIsSvgType: boolean | undefined;
+  private _nodeIsRectLikeVector: boolean | undefined;
+
+  nodeIsSvgType(): boolean {
+    if (this.nodeType === 'VECTOR') {
+      // Rectangles that have been flatten are converted to VECTOR nodes
+      // In the case we want to treat them as normal HTML elements.
+      if (!this.nodeIsRectLikeVector()) {
+        return true;
+      }
+    } else if (this.nodeType === 'ELLIPSE') {
+      return true;
+    } else if (this.nodeExportSettingsFormatSvg !== undefined) {
+      return true;
+    }
+
+    return false;
+  }
 
   domxText(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
