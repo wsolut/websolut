@@ -160,8 +160,8 @@ export class FigmaResponseConverter {
   ) {
     const escapedFontFamily = encodeURIComponent(nodeStyle.fontFamily);
 
-    let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:wght@${nodeStyle.fontWeight}&display=swap`;
-    // let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:ital,wght@0,100..900;1,100..900&display=swap`;
+    // let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:wght@${nodeStyle.fontWeight}&display=swap`;
+    let href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:ital,wght@0,100..900;1,100..900&display=swap`;
 
     if (nodeStyle.fontFamily === 'Baloo 2') {
       href = `https://fonts.googleapis.com/css2?family=${escapedFontFamily}:wght@400..800&display=swap`;
