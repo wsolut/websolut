@@ -10,6 +10,7 @@ export * from './figma-gradient-paint-to-css-radial-gradient';
 export * from './figma-gradient-paint-to-css-conic-gradient';
 export * from './figma-gradient-paint-to-css-rgba';
 export * from './figma-gradient-to-angle';
+export * from './figma-node-rect-like-vector';
 export * from './figma-paint-or-effect-css-rgba';
 export * from './figma-paint-or-effect-rgba';
 export * from './figma-rgba-to-css-rgba';
