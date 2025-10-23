@@ -267,6 +267,16 @@ export class FigmaNodeConverter {
     return this.nodeChildren.length > 0;
   }
 
+  nodeIsPolygonShape(): boolean {
+    return this.nodeType === 'LINE';
+    // return (
+    //   this.nodeType === 'LINE' ||
+    //   this.nodeType === 'POLYGON' ||
+    //   this.nodeType === 'RECTANGLE' ||
+    //   this.nodeType === 'ELLIPSE'
+    // );
+  }
+
   nodeIsImgType(): boolean {
     return this.nodeIsSvgType();
   }
@@ -1904,6 +1914,17 @@ export class FigmaNodeConverter {
   }
 
   left(): number | undefined {
+    if (this.isRotated() && this.nodeIsPolygonShape() && this.parent) {
+      const A = roundFloat(
+        this.nodeAsFrame.absoluteBoundingBox.x -
+          this.parent.nodeAsFrame.absoluteBoundingBox.x,
+      );
+
+      const B = roundFloat(this.nodeAsFrame.absoluteBoundingBox.height / 2);
+
+      return A - B;
+    }
+
     if ((this.isRotated() || this.nodeIsImgType()) && this.parent) {
       return (
         this.nodeAsFrame.absoluteBoundingBox.x -
@@ -2422,6 +2443,17 @@ export class FigmaNodeConverter {
   }
 
   top(): number | undefined {
+    if (this.isRotated() && this.nodeIsPolygonShape() && this.parent) {
+      const A = roundFloat(
+        this.nodeAsFrame.absoluteBoundingBox.y -
+          this.parent.nodeAsFrame.absoluteBoundingBox.y,
+      );
+
+      const B = roundFloat(this.nodeAsFrame.absoluteBoundingBox.height / 2);
+
+      return B - A;
+    }
+
     if ((this.isRotated() || this.nodeIsImgType()) && this.parent) {
       return (
         this.nodeAsFrame.absoluteBoundingBox.y -
