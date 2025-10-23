@@ -32,7 +32,7 @@
     }
 
     if (domxNode.text) {
-      return domxNode.text;
+      return domxNode.text.replaceAll('\n', '<br />');
     }
 
     return '';
