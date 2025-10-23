@@ -9,6 +9,7 @@ import {
   figmaGradientPaintToCssConicGradient,
   figmaFilterVisibleEffects,
   figmaFilterVisiblePaints,
+  figmaNodeRectLikeVector,
 } from './utils';
 import * as FigmaTypes from '@figma/rest-api-spec';
 import {
@@ -271,12 +272,24 @@ export class FigmaNodeConverter {
   }
 
   nodeIsSvgType(): boolean {
-    if (this.nodeType === 'VECTOR') return true;
-    if (this.nodeType === 'ELLIPSE') return true;
-    if (this.nodeExportSettingsFormatSvg !== undefined) return true;
+    if (this._nodeIsSvgType !== undefined) return this._nodeIsSvgType;
 
-    return false;
+    this._nodeIsSvgType = false;
+
+    if (this.nodeType === 'VECTOR') {
+      // Rectangles that have been flatten are converted to VECTOR nodes
+      if (!figmaNodeRectLikeVector(this.node)) {
+        this._nodeIsSvgType = true;
+      }
+    } else if (this.nodeType === 'ELLIPSE') {
+      this._nodeIsSvgType = true;
+    } else if (this.nodeExportSettingsFormatSvg !== undefined) {
+      this._nodeIsSvgType = true;
+    }
+
+    return this._nodeIsSvgType;
   }
+  private _nodeIsSvgType: boolean | undefined;
 
   domxText(): string | undefined {
     if (this.nodeType !== 'TEXT') return undefined;
@@ -518,6 +531,7 @@ export class FigmaNodeConverter {
       if (char === '\n') {
         lastTextNode.name = '<p>';
       } else {
+        // lastTextNode.characters += char === ' ' ? '&nbsp;' : char;
         lastTextNode.characters += char;
 
         overwritesIndex++;
