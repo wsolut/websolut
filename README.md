@@ -14,6 +14,7 @@ It provides a complete development environment with a **core engine**, a **backe
 
 - **Convert Figma to Production Code**
   From JSON to DOMX to any format: HTML+CSS, React, Vue, or your own templates.
+  Works with a Figma token **or** via the [Figma Plugin export](docs/FIGMA_PLUGIN.md) (no token required).
 
 - **Desktop App**
   ElectronJS app that ships with backend + configuration UIs.
@@ -43,6 +44,7 @@ Choose your platform:
 - [Getting your **Figma Token**](docs/FIGMA_TOKEN.md)
 - [Getting your **Vercel Token**](docs/VERCEL_TOKEN.md)
 - [Deploying with **WordPress Plugin**](WORDPRESS.md)
+- [**Figma Plugin** — export without a token](docs/FIGMA_PLUGIN.md)
 
 ---
 

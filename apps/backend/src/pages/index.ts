@@ -6,6 +6,7 @@ export * from './pages-export-wordpress.service';
 export * from './pages-preview-content.service';
 export * from './pages-export-preview.service';
 export * from './pages-synchronize.service';
+export * from './pages-synchronize-json.service';
 export * from './pages.controller';
 export * from './pages.gateway';
 export * from './pages.service';

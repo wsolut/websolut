@@ -1,0 +1,9 @@
+{
+  "api": "1.0.0",
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "id": "websolut-exporter",
+  "main": "dist/plugin.js",
+  "name": "Websolut Exporter",
+  "ui": "dist/ui.html"
+}

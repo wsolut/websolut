@@ -99,6 +99,56 @@ export async function downloadAsset(
   }
 }
 
+/**
+ * Saves a base64 data-URI asset directly to disk (no network request).
+ * Used when assets are embedded by the Figma plugin exporter.
+ */
+export async function saveDataUriAsset(
+  asset: DomxNodeAsset,
+  outDir: string,
+): Promise<void> {
+  const dataUri = asset.url || '';
+
+  // data:[<mediatype>][;base64],<data>
+  const match = dataUri.match(/^data:([^;,]+)(?:;[^,]*)?(?:;base64)?,(.+)$/s);
+  if (!match) return;
+
+  const mimeType = match[1];
+  const base64Data = match[2];
+
+  const ext = mimeType.split('/')[1]?.split('+')[0] || 'bin';
+  // Derive a stable filename from a short hash of the data URI
+  const hash = simpleHash(base64Data).toString(16).slice(0, 8);
+  const fileName = `asset-${hash}.${ext}`;
+  const filePath = join(outDir, fileName);
+
+  createDirSync(outDir);
+
+  const buffer = Buffer.from(base64Data, 'base64');
+  fs.writeFileSync(filePath, buffer);
+
+  try {
+    const imageInfo = imageSize(new Uint8Array(buffer));
+    asset.width = imageInfo.width;
+    asset.height = imageInfo.height;
+  } catch {
+    asset.width = 0;
+    asset.height = 0;
+  }
+
+  asset.fileName = fileName;
+}
+
+/** FNV-1a 32-bit hash — no dependency needed, just for stable filenames. */
+function simpleHash(str: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < Math.min(str.length, 2048); i++) {
+    hash ^= str.charCodeAt(i);
+    hash = (hash * 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
 export class PageAssetsDownloader {
   abortController: AbortController;
   page: Page;
@@ -127,12 +177,18 @@ export class PageAssetsDownloader {
 
       Object.values(downloadedAssets).forEach((node) => {
         Object.values(node.assets || {}).forEach((asset) => {
-          if (!asset.url || !asset.url.startsWith('http')) return;
+          if (!asset.url) return;
 
           const promise = (async () => {
             if (this.abortController.signal.aborted) throw new Error('Aborted');
 
-            await downloadAsset(asset, outDir, this.abortController.signal);
+            // data: URIs come from the Figma plugin export — save them directly
+            // to disk without a network round-trip.
+            if (asset.url.startsWith('data:')) {
+              await saveDataUriAsset(asset, outDir);
+            } else if (asset.url.startsWith('http')) {
+              await downloadAsset(asset, outDir, this.abortController.signal);
+            }
           })();
 
           assetPromises.push(promise);

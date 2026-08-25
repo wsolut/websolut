@@ -61,6 +61,7 @@
       @sync="handlePageSync"
       @preview="handlePagePreview"
       @edit="handlePageEdit"
+      @import-json="handlePageImportJson"
       @delete="requestPageDelete"
     />
 
@@ -99,6 +100,13 @@
       @confirm="handlePageDelete"
       @cancel="showDeletePageModal = false"
     />
+
+    <ImportJsonModal
+      v-if="showImportJsonModal && importJsonPage"
+      :page-id="importJsonPage.id"
+      @close="showImportJsonModal = false"
+      @imported="handlePageUpdated"
+    />
   </div>
 </template>
 
@@ -121,6 +129,7 @@ import { usePages, useProjects } from '@/composables';
 import { Icon } from '@iconify/vue';
 import ProjectNotFound from '@/components/projects/ProjectNotFound.vue';
 import Loader from '@/components/common/Loader.vue';
+import ImportJsonModal from '@/components/pages/ImportJsonModal.vue';
 
 const { pageAddJobStatus, pageUpdateJobStatus, pageDeleteJobStatus, pageHasPreview } = usePages();
 
@@ -144,6 +153,8 @@ const showDeleteProjectModal = ref(false);
 const showDeletePageModal = ref(false);
 const editingPage = ref<Page | null>(null);
 const deletingPage = ref<Page | null>(null);
+const importJsonPage = ref<Page | null>(null);
+const showImportJsonModal = ref(false);
 const pagesWsClient = backendClient.pagesWs();
 const projectsWsClient = backendClient.projectsWs();
 const jobStatusWsClient = backendClient.jobStatusesWs();
@@ -252,6 +263,11 @@ function handleJobStatusDeleted(jobStatus: JobStatus) {
 function handlePageEdit(page: Page) {
   editingPage.value = page;
   showEditModal.value = true;
+}
+
+function handlePageImportJson(page: Page) {
+  importJsonPage.value = page;
+  showImportJsonModal.value = true;
 }
 
 function fetchProject() {

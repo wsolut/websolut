@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Websolut Exporter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      background: var(--figma-color-bg);
+      color: var(--figma-color-text);
+      padding: 24px 20px;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.2px;
+    }
+
+    .logo svg { flex-shrink: 0; }
+
+    .selection-box {
+      background: var(--figma-color-bg-secondary);
+      border: 1px solid var(--figma-color-border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .selection-label {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .selection-name {
+      font-size: 14px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .selection-empty {
+      color: var(--figma-color-text-secondary);
+      font-style: italic;
+    }
+
+    .status-box {
+      background: var(--figma-color-bg-secondary);
+      border: 1px solid var(--figma-color-border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--figma-color-border);
+      border-top-color: var(--figma-color-icon-brand);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-text { line-height: 1.4; }
+
+    .status-text.error { color: var(--figma-color-text-danger); }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--figma-color-bg-brand);
+      color: var(--figma-color-text-onbrand);
+    }
+
+    .btn-secondary {
+      background: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border: 1px solid var(--figma-color-border);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="20" height="20" rx="4" fill="var(--figma-color-icon-brand)"/>
+      <path d="M5 14L8.5 7L12 14M7 11.5H10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M13 8C13 8 14 9 14 10.5C14 12 13 13 13 13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    Websolut Exporter
+  </div>
+
+  <div class="selection-box">
+    <div class="selection-label">Selected Frame</div>
+    <div id="selectionName" class="selection-name selection-empty">No frame selected</div>
+  </div>
+
+  <div class="status-box" id="statusBox" style="display:none">
+    <div class="spinner" id="spinner"></div>
+    <div class="status-text" id="statusText"></div>
+  </div>
+
+  <p class="hint">
+    Select a top-level Frame or Component, then click <strong>Export JSON</strong>.
+    Drop the downloaded file into the Websolut desktop app to start the same conversion pipeline — no Figma token needed.
+  </p>
+
+  <div class="actions">
+    <button class="btn-secondary" id="cancelBtn">Cancel</button>
+    <button class="btn-primary" id="exportBtn" disabled>Export JSON</button>
+  </div>
+</body>
+</html>

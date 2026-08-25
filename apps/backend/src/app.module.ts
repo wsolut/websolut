@@ -30,6 +30,7 @@ import {
   PagesPreviewContentService,
   PagesService,
   PagesSynchronizeService,
+  PagesSynchronizeJsonService,
 } from './pages';
 import { AsyncJobManagerService } from './services';
 import { RootController, SpaController } from './controllers';
@@ -53,6 +54,7 @@ const providers = [
   PagesPreviewContentService,
   PagesService,
   PagesSynchronizeService,
+  PagesSynchronizeJsonService,
   ProjectsDeployToVercelService,
   ProjectSerializerService,
   ProjectsExportStaticHtmlService,
