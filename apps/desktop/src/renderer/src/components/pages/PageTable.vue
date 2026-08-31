@@ -41,7 +41,7 @@ const pages = computed(() =>
   [...props.pages].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
 );
 
-const emit = defineEmits(['new', 'sync', 'preview', 'edit', 'delete', 'settings']);
+const emit = defineEmits(['new', 'sync', 'preview', 'edit', 'delete', 'settings', 'import-json']);
 </script>
 
 <template>
@@ -205,6 +205,15 @@ const emit = defineEmits(['new', 'sync', 'preview', 'edit', 'delete', 'settings'
                             ]"
                           />
                           <span class="ms-2">Sync</span>
+                        </Button>
+
+                        <Button
+                          @click="() => emit('import-json', page)"
+                          variant="secondary"
+                          title="Import from Figma Plugin JSON"
+                        >
+                          <Icon icon="material-symbols:upload-file" />
+                          <span class="ms-2">Import</span>
                         </Button>
 
                         <Button @click="() => emit('edit', page)" variant="secondary">

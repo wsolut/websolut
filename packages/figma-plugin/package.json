@@ -1,0 +1,16 @@
+{
+  "name": "@wsolut/figma-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Websolut Figma plugin — exports the selected frame as a websolut-core compatible JSON file",
+  "scripts": {
+    "build": "tsc --noEmit && node build.mjs",
+    "dev": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "*",
+    "esbuild": "*",
+    "typescript": "*"
+  }
+}

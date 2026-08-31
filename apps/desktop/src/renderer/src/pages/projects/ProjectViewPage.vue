@@ -61,6 +61,7 @@
       @sync="handlePageSync"
       @preview="handlePagePreview"
       @edit="handlePageEdit"
+      @import-json="handlePageImportJson"
       @delete="requestPageDelete"
     />
 
@@ -99,6 +100,13 @@
       @confirm="handlePageDelete"
       @cancel="showDeletePageModal = false"
     />
+
+    <ImportJsonModal
+      v-if="showImportJsonModal && importJsonPage"
+      :page-id="importJsonPage.id"
+      @close="showImportJsonModal = false"
+      @imported="handlePageImported"
+    />
   </div>
 </template>
 
@@ -121,6 +129,7 @@ import { usePages, useProjects } from '@/composables';
 import { Icon } from '@iconify/vue';
 import ProjectNotFound from '@/components/projects/ProjectNotFound.vue';
 import Loader from '@/components/common/Loader.vue';
+import ImportJsonModal from '@/components/pages/ImportJsonModal.vue';
 
 const { pageAddJobStatus, pageUpdateJobStatus, pageDeleteJobStatus, pageHasPreview } = usePages();
 
@@ -144,6 +153,8 @@ const showDeleteProjectModal = ref(false);
 const showDeletePageModal = ref(false);
 const editingPage = ref<Page | null>(null);
 const deletingPage = ref<Page | null>(null);
+const importJsonPage = ref<Page | null>(null);
+const showImportJsonModal = ref(false);
 const pagesWsClient = backendClient.pagesWs();
 const projectsWsClient = backendClient.projectsWs();
 const jobStatusWsClient = backendClient.jobStatusesWs();
@@ -254,6 +265,21 @@ function handlePageEdit(page: Page) {
   showEditModal.value = true;
 }
 
+function handlePageImportJson(page: Page) {
+  importJsonPage.value = page;
+  showImportJsonModal.value = true;
+}
+
+async function handlePageImported(updatedPage: Page) {
+  // Re-fetch the page to get fresh job statuses after import
+  try {
+    const res = await backendClient.pagesFetchOne(updatedPage.id);
+    if (res.data) handlePageUpdated(res.data);
+  } catch {
+    handlePageUpdated(updatedPage);
+  }
+}
+
 function fetchProject() {
   projectRequest.status = 'pending';
 
@@ -317,11 +343,17 @@ async function handlePageDelete() {
 }
 
 function handleProjectPreview() {
-  window.open(backendClient.projectsPreviewUrl(projectId), '_blank');
+  // Open the home page (empty path) or first page that has a preview
+  const homePage = pages.value.find((p) => p.homePage);
+  const firstPage = pages.value[0];
+  const targetPage = homePage || firstPage;
+  if (targetPage) {
+    window.open(backendClient.rawProjectsPreviewUrl(projectId, targetPage.id), '_blank');
+  }
 }
 
 function handlePagePreview(page: Page) {
-  window.open(backendClient.projectsPreviewUrl(projectId, page.path), '_blank');
+  window.open(backendClient.rawProjectsPreviewUrl(projectId, page.id), '_blank');
 }
 
 function handlePageNew() {

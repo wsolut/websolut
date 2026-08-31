@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["es2017"],
+    "strict": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "outDir": "dist",
+    "typeRoots": ["./node_modules/@types", "./node_modules/@figma/plugin-typings"]
+  },
+  "include": ["src"]
+}

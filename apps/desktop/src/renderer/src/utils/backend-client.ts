@@ -199,6 +199,16 @@ export class BackendClient {
     return this.patch<ApiClientResponse<Page>>(`${this.apiBaseUrl}/pages/${id}/synchronize`);
   }
 
+  async pagesSynchronizeJson(
+    id: number,
+    figmaJson: object,
+  ): Promise<ApiClientResponse<Page>> {
+    return this.post<ApiClientResponse<Page>>(
+      `${this.apiBaseUrl}/pages/${id}/synchronize-json`,
+      figmaJson,
+    );
+  }
+
   pagesExport(id: number, strategy: string) {
     window.open(`${this.apiBaseUrl}/pages/${id}/export/${strategy}`, '_blank');
   }

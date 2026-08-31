@@ -42,6 +42,7 @@ import {
   PagesPreviewContentService,
 } from './pages-preview-content.service';
 import { PagesSynchronizeService } from './pages-synchronize.service';
+import { PagesSynchronizeJsonService } from './pages-synchronize-json.service';
 import { PagesExportStaticHtmlService } from './pages-export-static-html.service';
 import { PagesExportWordpressService } from './pages-export-wordpress.service';
 import { Config } from '../config';
@@ -87,6 +88,7 @@ export class PagesController {
     private readonly pageSerializerService: PageSerializerService,
     private readonly pagesPreviewContentService: PagesPreviewContentService,
     private readonly pagesSynchronizeService: PagesSynchronizeService,
+    private readonly pagesSynchronizeJsonService: PagesSynchronizeJsonService,
     private readonly pagesExportStaticHtmlService: PagesExportStaticHtmlService,
     private readonly pagesExportWordpressService: PagesExportWordpressService,
   ) {}
@@ -231,6 +233,27 @@ export class PagesController {
   @ApiNotFoundResponse()
   async synchronize(@Param('id') id: number): Promise<HttpPageResponse> {
     const page = await this.pagesSynchronizeService.synchronize(id);
+
+    return { code: 200, data: this.pageSerializerService.serialize(page) };
+  }
+
+  @Post(':id/synchronize-json')
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description:
+      'Synchronizes a page from a Figma Plugin JSON export (no Figma token required)',
+    type: HttpPageResponse,
+  })
+  @ApiNotFoundResponse()
+  async synchronizeJson(
+    @Param('id') id: number,
+    @Body() body: Record<string, unknown>,
+  ): Promise<HttpPageResponse> {
+    const page = await this.pagesSynchronizeJsonService.synchronizeFromJson(
+      id,
+      body,
+    );
 
     return { code: 200, data: this.pageSerializerService.serialize(page) };
   }
