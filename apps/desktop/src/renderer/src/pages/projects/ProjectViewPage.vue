@@ -105,7 +105,7 @@
       v-if="showImportJsonModal && importJsonPage"
       :page-id="importJsonPage.id"
       @close="showImportJsonModal = false"
-      @imported="handlePageUpdated"
+      @imported="handlePageImported"
     />
   </div>
 </template>
@@ -270,6 +270,16 @@ function handlePageImportJson(page: Page) {
   showImportJsonModal.value = true;
 }
 
+async function handlePageImported(updatedPage: Page) {
+  // Re-fetch the page to get fresh job statuses after import
+  try {
+    const res = await backendClient.pagesFetchOne(updatedPage.id);
+    if (res.data) handlePageUpdated(res.data);
+  } catch {
+    handlePageUpdated(updatedPage);
+  }
+}
+
 function fetchProject() {
   projectRequest.status = 'pending';
 
@@ -333,11 +343,17 @@ async function handlePageDelete() {
 }
 
 function handleProjectPreview() {
-  window.open(backendClient.projectsPreviewUrl(projectId), '_blank');
+  // Open the home page (empty path) or first page that has a preview
+  const homePage = pages.value.find((p) => p.homePage);
+  const firstPage = pages.value[0];
+  const targetPage = homePage || firstPage;
+  if (targetPage) {
+    window.open(backendClient.rawProjectsPreviewUrl(projectId, targetPage.id), '_blank');
+  }
 }
 
 function handlePagePreview(page: Page) {
-  window.open(backendClient.projectsPreviewUrl(projectId, page.path), '_blank');
+  window.open(backendClient.rawProjectsPreviewUrl(projectId, page.id), '_blank');
 }
 
 function handlePageNew() {
